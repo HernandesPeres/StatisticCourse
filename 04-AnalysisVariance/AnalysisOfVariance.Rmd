@@ -9,40 +9,34 @@ output: html_document
 rm(list = ls())
 ```
 
-## Analysis of variance (ANOVA)
+# Analysis of variance (ANOVA)
 
-### Exemple 1 - Two variety of wheat
-
-```{r}
-var<-rep(1:2,each=5);var
-
-prod<-c(2.0,2.2,2.3,2.5,3.0,3.2,2.8,2.9,2.4,2.7);prod
-
-dados<-data.frame(var, prod);dados
-```
-
-### Calculating the means, variances and standard deviation for each treatment
-
-mean of prod for each var
+### Exemple 1: Variety of wheat
 
 ```{r}
-mean.prod <-tapply(prod, var, mean); mean.prod
+var <- rep(1:2,each=5);var
+
+prod <- c(2.0,2.2,2.3,2.5,3.0,3.2,2.8,2.9,2.4,2.7);prod
+
+dados <- data.frame(var, prod);dados
 ```
 
-variance of prod for each var
+Calculating mean
+```{r}
+mean.prod <- tapply(prod, var, mean); mean.prod
+```
 
+Calculating variance
 ```{r}
 var.prod <-tapply(prod, var, var); var.prod     
 ```
 
-standard deviation for each trat
-
+Calculating standard deviation
 ```{r}
 sd.prod <- tapply(prod, var, sd); sd.prod      
 ```
 
-function aov used for balanced data
-
+The `aov()` function is used for **balanced** data.
 ```{r}
 fit1 <- aov(prod~factor(var), data = dados)
 anova(fit1)
@@ -50,32 +44,26 @@ anova(fit1)
 summary(fit1)
 ```
 
-fuction "lm" used for balancend and desbalanced data
-
+Fitting a linear model using `lm()` function, which can be used for **balanced** and **unbalanced** data.
 ```{r}
 fit2 <- lm(prod~factor(var), data = dados)
 anova(fit2)
 ```
 
-predicted values
-
+Extracting the predicted values from the model using `fitted.values()`
 ```{r}
-yh<-fitted.values(fit1);yh
+yh <- fitted.values(fit1);yh
 ```
 
-residual
-
+Getting residual values from the fitted model using `residuals()`
 ```{r}
 res <- residuals(fit1); res
 ```
 
-residual standarded
-
+Residual standardized
 ```{r}
 res_Stand <- rstandard(fit1); res_Stand
 round(data.frame(res,res_Stand),5)
 
-# other way to get res
-(prod-yh)
-
+(prod-yh) # other way to get res
 ```
