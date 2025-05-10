@@ -20,7 +20,6 @@ library(dplyr)
 ```
 
 ### 3. Save and load results
-
 Save created objects
 ```{r}
 save(list = ls(all.names = TRUE), file = "Result.RData", envir = .GlobalEnv)
