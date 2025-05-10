@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Objects in R
+### 1.Objects in R
 
 R is an object-oriented language.
 
@@ -26,7 +26,7 @@ y
 y + x  # Sum of x and y.
 ```
 
-### Arithmetic Operations
+### 2.Arithmetic Operations
 
 R can be used for simple arithmetic expressions:
 
@@ -37,7 +37,7 @@ R can be used for simple arithmetic expressions:
 4 * 3^3     # Power operation
 ```
 
-### Common Mathematical Functions
+### 3.Common Mathematical Functions
 
 ```{r}
 sqrt(2)      # Square root
@@ -63,7 +63,7 @@ log2(5)   # Logarithm base 2
 exp(1.61) # Exponential function
 ```
 
-### Vectors
+### 4.Vectors
 
 ```{r}
 x1 <- 10
@@ -81,7 +81,7 @@ is.numeric(x2)
 is.character(x2)
 ```
 
-### Creating Sequences
+### 5.Creating Sequences
 
 ```{r}
 x3 <- 1:10                 # Sequence from 1 to 10
@@ -94,7 +94,7 @@ x4[x4 >= 0.5]              # Filter values greater than or equal to 0.5
 x4 <= 0.5                  # Logical test
 ```
 
-### Replicating Values
+### 6.Replicating Values
 
 ```{r}
 x5 <- seq(0, 1, length.out = 11)
@@ -113,10 +113,15 @@ x9 <- rep(2:5, each = 5)
 x9
 ```
 
-### Random Numbers
+### 7.Random Numbers
+
+In statistics, most simulation methods need to be reproducible, even though they involve simulated data.
+
+Then to achieve it, we can use the function `set.seed()`.
 
 ```{r}
 set.seed(123)
+
 x10 <- rnorm(10, mean = 70, sd = 10)
 x10
 
@@ -126,36 +131,64 @@ var(x10)      # Variance
 sd(x10)       # Standard deviation
 min(x10)      # Minimum value
 max(x10)      # Maximum value
+```
+
+The `summary()` function is one of the most commonly used functions in R, due to its usability.
+
+```{r}
 summary(x10)  # Summary statistics
 summary(1:10)
 ```
 
-### Data Frames
+### 8.Data Frames
+
+Dataframes are data displayed in a table format
+
+Columns can be `character`, `numeric`, `logical` and/or `factor`.
+
+Each column should have the same type of data.
 
 ```{r}
-d1 <- data.frame(X = 1:10, Y = c(51, 54, 61, 67, 68, 75, 77, 75, 80, 82))
+d1 <- data.frame(X = 1:10,
+                 Y = c(51, 54, 61, 67, 68, 75, 77, 75, 80, 82))
 d1
 
+summary(d1)
+```
+
+Using the `summary()` function we can summarize the data from the dataframe.
+
+```{r}
 names(d1)
 d1$X  # Column X
 d1$Y  # Column Y
+```
 
+We can use `$` (dollar sign) to acess a column by its name
+
+```{r}
 plot(d1)  # Scatter plot
 title("Scatter Plot of Data Frame")
 plot(d1$X, d1$Y)  # X vs Y
 ```
 
-## Reading Data from a File
+### 9.Creating Data
+
+$$
+\begin{array}{|c|c|c|c|c|}
+\hline
+\textbf{Rep} & \textbf{A} & \textbf{B} & \textbf{C} & \textbf{D} \\
+\hline
+1 & 25 & 31 & 22 & 33 \\
+2 & 26 & 25 & 26 & 29 \\
+3 & 20 & 28 & 28 & 31 \\
+4 & 23 & 27 & 25 & 34 \\
+5 & 21 & 24 & 29 & 28 \\
+\hline
+\end{array}
+$$
 
 ```{r}
-# Example dataset structure:
-# Rep      A   B   C   D
-# 1      25  31  22  33
-# 2      26  25  26  29
-# 3      20  28  28  31
-# 4      23  27  25  34
-# 5      21  24  29  28
-
 treatments <- rep(c("A", "B", "C", "D"), each = 5)
 
 replicates <- rep(1:5, times = 4)
@@ -166,17 +199,38 @@ production <- c(25, 26, 20, 23, 21,
                 33, 29, 31, 34, 28)
 
 data <- data.frame(treatments, replicates, production)
-data
-
-# Reading from a text file
-# Ensure the file "data_1.csv" exists in the working directory.
-# data <- read.csv("data_1.csv", header = TRUE)
 ```
 
-## Lesson 2
+### 10. Reading Data
+
+External data can be read from `.txt` files (plain text) or `.csv` files (comma-separated values), using respectively `read.txt()` and `read.csv()` functions.
+
+Ensure that the file `"data_1.csv"` is present in the working directory before attempting to load it.
 
 ```{r}
+data <- read.csv("data_1.csv", header = TRUE)
+head(data)
+```
+
+As we can se the theatments is caracterize as `chr`, we have to change it to `factor`
+
+```{r}
+data$treatments <- as.factor(data$treatments)
+head(data)
+```
+
+## 11. Others utilities
+
+Every function in R has an underlying implementation and was developed by someone.
+
+To access and better understand how each function works, you can consult its manual by typing `?function_name` in the R console.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 y <- c(72.5, 69, 75, 70.8, 71.2, 73, 70, 67.1, 71, 72.5)
+
+?sum
+?mean
+
 sum(y)
 length(y)
 mean(y)
