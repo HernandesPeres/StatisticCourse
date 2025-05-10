@@ -233,7 +233,8 @@ TST
 df2 = data.frame(name = factor(rep(c("Lib.", "Adm."), c(7,9))),
                  values = c(lib, adm))
 
-boxplot(data = df2, 
+boxplot(values~name,
+        data = df2, 
         xlab = "Groups", 
         ylab = "Values", 
         border = "black", 
