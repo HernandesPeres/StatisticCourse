@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Clean up the environment
 
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 rm(list=ls())  # Remove any previously created objects
 ls()           # Check the objects in the current R session
 
@@ -27,13 +27,11 @@ colors <- c("#7ad151ff",
 ## Save and load results
 
 Save created objects
-
 ```{r}
 save(list = ls(all.names = TRUE), file = "Result.RData", envir = .GlobalEnv)
 ```
 
 Load saved file after exiting R
-
 ```{r}
 load("Result.RData", envir = parent.frame(), verbose = FALSE)
 ```
@@ -76,13 +74,16 @@ In healthy individuals, renal oxygen consumption is normally distributed around 
 
 ```{r}
 o2 = data.frame(v1 = as.factor(1),
-                   v2 = c(14.4, 12.9, 15.0, 13.7, 13.5))
+                v2 = c(14.4, 12.9, 15.0, 13.7, 13.5))
 ```
 
 use t.test()
 
 ```{r}
-t.test(o2$v2, mu = 12, paired = FALSE, alternative = "two.sided", conf.level = 0.99)
+t.test(o2$v2, mu = 12, 
+       paired = FALSE, 
+       alternative = "two.sided", 
+       conf.level = 0.99)
 ```
 
 Another way to calculate the p-value
@@ -94,12 +95,15 @@ pt(5.2099, df = 4, lower = FALSE) * 2  # Bilateral test *2
 Repeat the test with a 95% confidence interval
 
 ```{r}
-teste_t <- t.test(o2$v2, mu = 12, paired = FALSE, 
-                  alternative = "two.sided", conf.level = 0.95);teste_t
+teste_t <- t.test(o2$v2, 
+                  mu = 12,
+                  paired = FALSE, 
+                  alternative = "two.sided", 
+                  conf.level = 0.95);teste_t
 ```
 
 **boxplot for the sample**
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 mean_v2 <- mean(o2$v2)
 sd_v2 <- sd(o2$v2)
 
@@ -112,10 +116,12 @@ o2 %>%
   geom_point(aes(y = mean_v2 + sd_v2), color = "blue", size = 3) +
   geom_point(aes(y = mean_v2 - sd_v2), color = "blue", size = 3) +
   labs(y = "Oxygen consumption") +
-  scale_color_manual(name = "", values = c("Mean (p-value = 0.0065)" = "red", "Mean ± SD" = "blue")) +
-  scale_shape_manual(name = "", values = c("Mean (p-value = 0.0065)" = 19, "Mean ± SD" = 8))+
-  theme_bw()
-
+  scale_color_manual(name = "", 
+                     values = c("Mean (p-value = 0.0065)" = "red", 
+                                "Mean ± SD" = "blue")) +
+  scale_shape_manual(name = "", 
+                     values = c("Mean (p-value = 0.0065)" = 19, 
+                                "Mean ± SD" = 8))
 ```
 
 ### Barplot with 95% Confidence Interval
@@ -131,12 +137,12 @@ df <- data.frame(med = med,
   x = "Oxygen Consumption")
 
 df %>% ggplot(aes(x = x, y = med)) +
-  geom_bar(stat = "identity", fill = "#3399ff", width = 0.3, alpha = 0.65, color = "black") +
+  geom_bar(stat = "identity", 
+           fill = "#3399ff", width = 0.3, alpha = 0.65, color = "black") +
   geom_errorbar(aes(ymin = ci.l, ymax = ci.u), width = 0.2) +
   labs(x = "Oxygen Consumption",
        y = "Mean") +
-  scale_x_discrete(expand = c(0.2, 0.2)) +  # para ajuste no espaço da barra
-  theme_bw()
+  scale_x_discrete(expand = c(0.2, 0.2))
 ```
 
 # Example 3: t-Test for Two Independent Means (Case A)
@@ -160,7 +166,7 @@ var.test(c1, c2, ratio = 1, alternative = "greater", conf.level = 0.95)
 ### b) Conduct the t-test
 
 ```{r}
-t=t.test(c1, c2, 
+t <- t.test(c1, c2, 
        mu = 0, 
        paired = FALSE, 
        var.equal = TRUE, 
@@ -171,7 +177,7 @@ t=t.test(c1, c2,
 ## Plot the two samples
 
 ```{r}
-df = data.frame(name = as.factor(rep(1:2, each = 5)),
+df <- data.frame(name = as.factor(rep(1:2, each = 5)),
                 values = c(c1,c2))
 
 df %>% ggplot(aes(x = name, y = values, fill = name)) +
@@ -255,7 +261,7 @@ t.test(depois, antes, paired = TRUE, alternative = "less", conf.level = 0.95)
 
 ### Plotting the Differences
 
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 df = data.frame(name = factor(rep(c("antes", "depois"), c(7, 7))),
                 values = c(antes, depois))
 
