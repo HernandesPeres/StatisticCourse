@@ -1,0 +1,115 @@
+---
+title: "Quadratic Regression with repeated measures in CRD"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+# Clear environment
+rm(list = ls())
+ls()
+
+# Load dataset
+data <- read.table("5EST220-DataReagente.txt", header = TRUE)
+head(data)
+attach(data)
+```
+
+Assumption checking (CRD)
+
+```{r}
+
+# Linear model treating x as a factor (for residual analysis)
+fit1 <- lm(y ~ factor(x))
+res <- fit1$residuals
+res
+
+# Normality test
+shapiro.test(res)
+
+# Homogeneity of variances
+bartlett.test(res, x)
+```
+
+Fitting a quadratic regression model
+
+```{r}
+# Scatterplot
+plot(x, y, pch = 19, col = "red", main = "Scatterplot: Response vs. Dose")
+
+# Quadratic model
+fit2 <- lm(y ~ x + I(x^2))
+summary(fit2)
+
+# Coefficient of determination
+R2 <- summary(fit2)$r.squared; R2
+anova(fit2)
+coef(fit2)
+confint(fit2)
+```
+
+**Model Equation:**
+
+*𝑌= − 0.2774 + 0.0323𝑋−0.000089𝑋\^2*
+
+Residual Sum of Squares = 3.6021 Includes both pure error and lack of fit
+
+### Pure error and lack of fit analysis
+
+```{r}
+# Fit using x as a factor to capture pure error
+fit3 <- lm(y ~ factor(x))
+summary(fit3)
+R2max <- summary(fit3)$r.squared; R2max
+anova(fit3)
+
+# Lack of fit test (comparing quadratic to full model)
+anova(fit2, fit3)
+anova(fit1, fit2)
+```
+
+**Results:**
+
+-RSS (fit2): 3.6021 (27 df) -Pure Error: 2.9267 (20 df) -Lack of Fit: 0.6754 (7 df), F = 0.6594, p = 0.7031 → Not significant
+
+```{r}
+# Real R-squared
+R2real <- R2 / R2max
+R2real
+```
+
+Using ExpDes.pt for Analysis
+
+```{r}
+library(ExpDes.pt)
+
+# Quantitative analysis
+dic(x, y, quali = FALSE, mcomp = "tukey", sigT = 0.05, sigF = 0.06)
+
+# Polynomial regression with known degrees of freedom and SS
+dic <- lm(y ~ factor(x))
+anova(dic)
+
+reg.poly(y, x, 20, 2.9267, 9, 7.3430)
+```
+
+Plotting the Fitted Quadratic Model
+
+```{r}
+# Plot observed values
+plot(y ~ x, data = data, pch = 16, col = "blue",
+     xlab = "Dose X", ylab = "Response Y", ylim = c(0, 3),
+     xaxt = "n", frame = FALSE)
+axis(1, xaxp = c(50, 300, 10))  # custom ticks
+
+# Add fitted curve
+cf.m <- coef(fit2)
+curve(cf.m[1] + cf.m[2]*x + cf.m[3]*I(x^2), add = TRUE, col = "red", lty = 1)
+
+# Annotate with equation and R²
+co <- format(c(coef(fit2), R2real), digits = 4)
+text(160, 0.8, label = substitute(
+  hat(y) == b0 + b1*x + b2*x^2 ~~~~ (R^2 == r2),
+  list(b0 = co[1], b1 = co[2], b2 = co[3], r2 = co[4])))
+```

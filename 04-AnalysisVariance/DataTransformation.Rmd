@@ -1,0 +1,61 @@
+---
+title: "DataTransformation"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output: html_document
+---
+## Square Root Transformation
+
+```{r}
+birds <- c(22,28,37,34,13,24,39,5,33,32)
+mean_birds <- mean(birds)
+
+birds_t <- sqrt(birds)
+mean_birds_t <- mean(birds_t)
+
+# Inverse transformation
+mean_birds_to <- (mean_birds_t)^2
+birds_o <- (birds_t)^2
+mean_birds_o <- mean(birds_o)
+```
+
+## Logarithmic Transformation
+
+```{r}
+mydata <- c(12,19,0,15,145,0,32,5,17)
+mean_o <- mean(mydata)
+
+log10mydata <- log10(mydata + 1)
+mean_t <- mean(log10mydata)
+
+# Inverse transformation
+mydata_O10 <- (10^(log10mydata) - 1)
+```
+
+## Arcsine Transformation
+```{r}
+x <- c(0.25, 0.31, 0.21, 0.24, 0.3, 0.29, 0.22)
+xt <- asin(sqrt(x)) * 180 / pi
+x_O <- sin((xt) / 180 * pi)^2
+```
+
+## Box-Cox Transformation
+```{r}
+library(MASS)
+
+trat <- rep(1:5, each=6)
+repet <- rep(1:6, 5)
+resp <- c(2370,1687,2592,2283,2910,3020,1282,1527,871,1025,825,920,562,321,
+        636,317,485,842,173,127,132,150,129,227,193,71,82,62,96,44)
+data <- data.frame(trat, repet, resp)
+
+fit1 <- aov(resp ~ factor(trat), data=data)
+anova(fit1)
+
+# QQ Plot
+qqnorm(data$resp)
+qqline(data$resp, col=2)
+
+# Box-Cox estimation
+boxcox(resp ~ trat, data=data, plotit=T)
+```

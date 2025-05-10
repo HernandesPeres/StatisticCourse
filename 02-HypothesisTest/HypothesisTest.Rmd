@@ -1,0 +1,274 @@
+---
+title: "Hypothesis Tests"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Clean up the environment
+
+```{r}
+rm(list=ls())  # Remove any previously created objects
+ls()           # Check the objects in the current R session
+
+library(ggplot2)
+library(dplyr)
+
+colors <- c("#7ad151ff",
+            "#3399ff",
+            "#FF6666")
+
+```
+
+## Save and load results
+
+Save created objects
+
+```{r}
+save(list = ls(all.names = TRUE), file = "Result.RData", envir = .GlobalEnv)
+```
+
+Load saved file after exiting R
+
+```{r}
+load("Result.RData", envir = parent.frame(), verbose = FALSE)
+```
+
+Check objects in the "Result.RData" file
+
+```{r}
+ls()
+```
+
+# Example 1: F-test for Variance
+
+The quality of rivets is considered better when their homogeneity is higher. Six rivets from two brands were tested for shear strength, and rupture forces were measured. The producer of Brand B claims their rivets are better. Use a 5% significance level.
+
+```{r}
+marca_A <- c(34.9, 35.5, 38.8, 39.2, 33.7, 37.6)
+marca_B <- c(38.5, 39.0, 40.7, 42.9, 37.8, 41.4)
+
+var(marca_A)
+var(marca_B)
+```
+
+### Conduct the F-test to compare variances
+
+The null hypothesis is that the ratio of variances is equal to 1, and the alternative is that it is not equal to 1.
+
+```{r}
+var.test(marca_A, marca_B, ratio = 1, alternative = "greater", conf.level = 0.95)
+```
+
+Another way to calculate the p-value
+
+```{r}
+pf(1.326, df1 = 5, df2 = 5, lower = FALSE, log.p = FALSE)
+```
+
+# Example 2: t-Test for a Mean
+
+In healthy individuals, renal oxygen consumption is normally distributed around 12 cm³/min.We want to test if a certain disease affects this value using data from five patients. Test at a 1% significance level.
+
+```{r}
+o2 = data.frame(v1 = as.factor(1),
+                   v2 = c(14.4, 12.9, 15.0, 13.7, 13.5))
+```
+
+use t.test()
+
+```{r}
+t.test(o2$v2, mu = 12, paired = FALSE, alternative = "two.sided", conf.level = 0.99)
+```
+
+Another way to calculate the p-value
+
+```{r}
+pt(5.2099, df = 4, lower = FALSE) * 2  # Bilateral test *2
+```
+
+Repeat the test with a 95% confidence interval
+
+```{r}
+teste_t <- t.test(o2$v2, mu = 12, paired = FALSE, 
+                  alternative = "two.sided", conf.level = 0.95);teste_t
+```
+
+**boxplot for the sample**
+```{r}
+mean_v2 <- mean(o2$v2)
+sd_v2 <- sd(o2$v2)
+
+o2 %>%
+  ggplot(aes(x = v1, y = v2)) +
+  geom_boxplot() +
+  geom_point(aes(y = mean_v2), color = "red", size = 3) +
+  geom_text(aes(y = mean_v2, label = paste("Mean (p-value = 0.0065)")), 
+            color = "black", size = 3, vjust = 2) +
+  geom_point(aes(y = mean_v2 + sd_v2), color = "blue", size = 3) +
+  geom_point(aes(y = mean_v2 - sd_v2), color = "blue", size = 3) +
+  labs(y = "Oxygen consumption") +
+  scale_color_manual(name = "", values = c("Mean (p-value = 0.0065)" = "red", "Mean ± SD" = "blue")) +
+  scale_shape_manual(name = "", values = c("Mean (p-value = 0.0065)" = 19, "Mean ± SD" = 8))+
+  theme_bw()
+
+```
+
+### Barplot with 95% Confidence Interval
+
+```{r}
+med <- teste_t[5][[1]][[1]]
+ci.l <- abs(teste_t[4][[1]][[1]])
+ci.u <- abs(teste_t[4][[1]][[2]])
+
+df <- data.frame(med = med,
+  ci.l = ci.l,
+  ci.u = ci.u,
+  x = "Oxygen Consumption")
+
+df %>% ggplot(aes(x = x, y = med)) +
+  geom_bar(stat = "identity", fill = "#3399ff", width = 0.3, alpha = 0.65, color = "black") +
+  geom_errorbar(aes(ymin = ci.l, ymax = ci.u), width = 0.2) +
+  labs(x = "Oxygen Consumption",
+       y = "Mean") +
+  scale_x_discrete(expand = c(0.2, 0.2)) +  # para ajuste no espaço da barra
+  theme_bw()
+```
+
+# Example 3: t-Test for Two Independent Means (Case A)
+
+Data represents the strength of two types of concrete. At a 5% significance level, we want to test if concrete 1 is stronger than concrete 2.
+
+```{r}
+c1 <- c(54, 55, 58, 51, 57)
+c2 <- c(50, 54, 56, 52, 53)
+```
+
+### a) Test for variance homogeneity
+
+```{r}
+var(c1)
+var(c2)
+
+var.test(c1, c2, ratio = 1, alternative = "greater", conf.level = 0.95)
+```
+
+### b) Conduct the t-test
+
+```{r}
+t=t.test(c1, c2, 
+       mu = 0, 
+       paired = FALSE, 
+       var.equal = TRUE, 
+       alternative = "greater", 
+       conf.level = 0.95)
+```
+
+## Plot the two samples
+
+```{r}
+df = data.frame(name = as.factor(rep(1:2, each = 5)),
+                values = c(c1,c2))
+
+df %>% ggplot(aes(x = name, y = values, fill = name)) +
+  geom_boxplot(color = "black", width = 0.5)+
+  stat_summary(fun = mean, geom = "point", size = 3, color = "red")+
+  stat_summary(fun = function(x) mean(x) + sd(x), geom = "point", size = 3, color = "blue")+
+  stat_summary(fun = function(x) mean(x)-sd(x), geom = "point", size = 3, color = "blue")+
+  annotate(geom = "text", x = 1, y = 55.5, label = "55", color = "white")+
+  annotate(geom = "text", x = 2, y = 53.5, label = "53", color = "white")+
+  annotate(geom = "text", x = 2.5, y = 58, label = sprintf("p-valor = %s", round(t$p.value,2)))+
+  scale_fill_manual(name = "Concretes", values = colors)+
+  theme_bw()
+
+```
+
+# Example 4: t-Test for Two Independent Means (Case B)
+
+Comparing salaries of two professional groups: general liberal professionals and business administration graduates.
+
+Test at a 5% significance level.
+
+```{r}
+lib <- c(6.6, 10.3, 10.8, 12.9, 9.2, 12.3, 7.0)
+adm <- c(8.1, 9.8, 8.7, 10.0, 10.2, 10.8, 8.2, 8.7, 10.1)
+```
+
+## a) Test for variance homogeneity
+
+```{r}
+var(lib)
+var(adm)
+
+var.test(lib, 
+         adm, 
+         ratio = 1, 
+         alternative = "greater", 
+         conf.level = 0.95)
+```
+
+## b) Conduct the t-test
+
+```{r}
+TST <- t.test(lib, adm, 
+              mu = 0, 
+              paired = FALSE, 
+              var.equal = FALSE, 
+              alternative = "two.sided", 
+              conf.level = 0.95)
+TST
+```
+
+## Barplot with mean ± SD
+```{r}
+df2 = data.frame(name = factor(rep(c("Liberals", "Administrators"), c(7,9))),
+                 values = c(lib,adm))
+
+df2 %>% ggplot(aes(x = name, y = values, fill = name)) +
+  geom_boxplot()+
+  stat_summary(fun =mean, geom = "point", color = "red")+
+  stat_summary(fun = function(x) mean(x)+sd(x), color = "blue")+
+  stat_summary(fun = function(x) mean(x)-sd(x), color = "blue")+
+  annotate(geom = "text", x = 1, y = 9.6, label = "9.4")+
+  annotate(geom = "text", x = 2, y = 10.07, label = "9.87")+
+  annotate(geom = "text", x = 0.6, y = 13, label = sprintf("p-valor = %s", round(TST$p.value,2)))+
+  scale_fill_manual(values = colors)+
+  theme(legend.position = "none")+
+  theme_bw()
+  
+```
+
+# Example 5: t-Test for Paired Data (Before vs After)
+
+We want to test if a chemical product is effective in repelling household insects. The number of insects was counted before and after the application of the product.
+
+```{r}
+antes <- c(8, 6, 7, 8, 9, 6, 7)
+depois <- c(4, 0, 3, 5, 3, 4, 2)
+
+t.test(depois, antes, paired = TRUE, alternative = "less", conf.level = 0.95)
+```
+
+### Plotting the Differences
+
+```{r}
+df = data.frame(name = factor(rep(c("antes", "depois"), c(7, 7))),
+                values = c(antes, depois))
+
+df %>% ggplot(aes(x = name, y = values, fill = name))+
+  geom_boxplot()+
+  stat_summary(fun = mean, color = "red", size = 0.5)+
+  stat_summary(fun = function(x) mean(x)+sd(x), size = 0.5, color = "blue")+
+  stat_summary(fun = function(x) mean(x)-sd(x), size = 0.5, color = "blue")+
+  annotate("text", x = 1, y = 7.64, label = "7.29")+
+  annotate("text", x = 2, y = 3.35, label = "3")+
+  scale_fill_manual(values = colors)+
+  labs(x = " ",
+       y = "Values")+
+  theme_bw()+
+  theme(legend.position = "none")
+```

@@ -1,0 +1,102 @@
+---
+title: "LinearRegression-SD"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Second-degree Linear Regression
+Dry matter (g/plant) as a function of zinc doses (ppm)
+```{r}
+ls()           # List all created objects
+rm(list=ls())  # Remove all created objects
+ls()
+
+x <- c(1.0, 2.5, 4.0, 5.5, 7.0, 8.5)
+y <- c(20.3, 31.3, 34.6, 35.1, 30.2, 19.7)
+
+ms <- data.frame(x, y)
+ms
+attach(ms)
+
+plot(y ~ x, col = 4, pch = 19, data = ms,
+     main = "Scatter plot: Dry matter vs Zinc dose",
+     xlab = "Zinc dose (ppm)", ylab = "Dry matter (g/plant)")
+
+```
+
+## Model selection and assumption checking
+
+Fit first-degree model
+
+```{r}
+fit1 <- lm(y ~ x)
+summary(fit1)
+anova(fit1)
+```
+
+The first-degree model does not adequately explain the variability in y.
+
+Fit second-degrre model
+
+```{r}
+fit2 <- update(fit1, . ~ . + I(x^2))  # Option 1
+summary(fit2)
+anova(fit2)
+
+fit3 <- lm(y ~ x + I(x^2))  # Option 2
+summary(fit3)
+anova_fit3 <- anova(fit3)
+print(anova_fit3, digits = 6)
+
+fit4 <- lm(y ~ poly(x, degree = 2, raw = TRUE))  # Option 3
+summary(fit4)
+anova_fit4 <- anova(fit4)
+print(anova_fit4, digits = 6)
+```
+
+Assumption: normality
+```{r}
+shapiro.test(fit3$res)
+```
+
+Adjust regresstion plot
+```{r}
+plot(y ~ x, data = ms, pch = 16, col = "blue", xaxt = "n", 
+     xlab = "Zinc dose (ppm)", ylab = "Dry matter (g/plant)", ylim = c(18, 40))
+axis(1, xaxp = c(0, 10, 20))
+
+cf.m4 <- coef(fit3)
+curve(cf.m4[1] + cf.m4[2]*x + cf.m4[3]*x^2, add = TRUE, col = "red", lwd = 2)
+
+co <- format(c(coef(fit3), R2), digits = 4)
+text(4.7, 27, label = substitute(hat(y[i])==b0+b1*x[i]+b2*x[i]^2~~~~R^2==r2,
+                                 list(b0 = co[1], b1 = co[2], b2 = co[3], r2 = co[4])),
+     bty = "n", cex = 0.8)
+```
+
+Vertex and ferivate analysis
+```{r}
+# First derivative: find critical point
+D(expression(11.24222 + 10.4677*x - 1.113492*x^2), "x")
+
+# Solve for the root (critical point)
+ro <- uniroot(function(x) 10.4677 - 1.113492 * (2 * x), c(1, 8.5))
+str(ro)
+
+abline(v = ro$root, h = 0, col = 1, lty = 3)
+
+# Maximum dry matter value
+xc <- ro$root
+xc
+y_max <- 11.24222 + 10.4677*xc - 1.113492*xc^2
+y_max
+abline(v = xc, h = y_max, col = 1, lty = 3)
+```
+
+Second derivative test
+```{r}
+# Second derivative to confirm maximum point
+D(D(expression(11.24222 + 10.4677*x - 1.113492*x^2), "x"), "x")
+```
+Since the second derivative is negative, the critical point is a maximum.

@@ -1,0 +1,153 @@
+---
+title: "Linear Regresion"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Linear Regression - First degree
+
+```{r}
+ls()  # List created objects
+rm(list = ls())  # Remove all objects
+ls()
+```
+
+```{r}
+x <- c(50, 75, 100, 125, 150)
+y <- c(1.2, 1.7, 2.0, 2.1, 2.5)
+goat <- data.frame(x, y)
+goat
+```
+
+```{r}
+plot(y ~ x, pch = 19, data = goat,
+     main = "Scatterplot of Milk Production vs Feed Level",
+     xlab = "Feed Level (g)", ylab = "Milk Production (L/day)")
+
+cor(goat)
+```
+
+Fitting the linear model
+
+```{r}
+fit1 <- lm(y ~ x)
+summary(fit1)
+anova(fit1)
+fit1$fitted.values
+fit1$res
+
+```
+
+Normality test
+
+```{r}
+shapiro.test(fit1$res)
+```
+
+Final model summary and statistics
+
+```{r}
+fit2 <- lm(y ~ x)
+summary(fit2)
+
+R2 <- summary(fit2)$adj.r.squared; R2
+anova(fit2)
+coef(fit2)
+confint(fit2)
+```
+
+Coefficiente of variation
+
+```{r}
+QMResid <- anova(fit2)[2, 3]
+CV <- 100 * sqrt(QMResid) / mean(y)
+CV
+```
+
+### Regresstion plot
+
+```{r}
+plot(y ~ x, data = goat, pch = 19, col = "red3", 
+     xlim = c(48, 150), ylim = c(0.5, 3),
+     xlab = "Feed Level (g)", ylab = "Milk Production (L/day)",
+     main = "Relationship Between Feed and Milk Production")
+
+axis(1, xaxp = c(50, 150, 10))
+
+# Axis break
+require(plotrix)
+axis.break(axis = 1, breakpos = 46, bgcol = "white", breakcol = "black",
+           style = "slash", brw = 0.02)
+
+# Add regression line
+coef.m <- coef(fit2)
+curve(coef.m[1] + coef.m[2] * x, add = TRUE, lty = 1, col = "blue3", lwd = 2)
+
+# Equation and R²
+co <- format(c(coef(fit2), R2), digits = 4)
+text(115, 1.45, label = substitute(hat(y[i]) == b0 + b1 * x[i] ~~~~ (r^2 == r2),
+                                   list(b0 = co[1], b1 = co[2], r2 = co[3])))
+
+```
+
+### Regresstion plot (With confidence interval)
+
+```{r}
+plot(y ~ x, data = goat, pch = 19, col = "red3", 
+     xlim = c(48, 150), ylim = c(0.5, 3),
+     xlab = "Feed Level (g)", ylab = "Milk Production (L/day)",
+     main = "Feed vs Milk Production with Confidence Interval")
+
+axis(1, xaxp = c(50, 150, 10))
+
+require(plotrix)
+axis.break(axis = 1, breakpos = 46, bgcol = "white", breakcol = "black",
+           style = "slash", brw = 0.02)
+
+curve(coef.m[1] + coef.m[2] * x, add = TRUE, lty = 1, col = "blue3", lwd = 2)
+
+# Confidence intervals
+xframe <- data.frame(x = seq(50, 150, by = 5))
+xa <- xframe$x
+ya <- predict(fit2, int = "c", newdata = xframe)
+
+lines(xa, ya[, "lwr"], lty = 3)
+lines(xa, ya[, "upr"], lty = 3)
+
+coord <- data.frame(x = c(xa, rev(xa)), y = c(ya[, "lwr"], rev(ya[, "upr"])))
+polygon(coord, border = NA, col = adjustcolor("black", alpha = 0.2))
+
+text(115, 1.45, label = substitute(hat(y[i]) == b0 + b1 * x[i] ~~~~ (r^2 == r2),
+                                   list(b0 = co[1], b1 = co[2], r2 = co[3])))
+
+```
+
+### Alternativa using matplot
+
+```{r}
+new <- data.frame(x = seq(50, 150, by = 5))
+xh <- new$x
+yh <- predict(fit2, int = "c", newdata = new)
+
+matplot(xh, yh, lty = c(1, 3, 3), lwd = 1, col = c("blue3", 1, 1), type = "l",
+        xlim = c(48, 150), ylim = c(0.5, 3),
+        xlab = "Feed Level (g)", ylab = "Milk Production (L/day)",
+        main = "Feed vs Milk Production with Confidence Interval (matplot)")
+
+axis(1, xaxp = c(50, 150, 10))
+require(plotrix)
+axis.break(axis = 1, breakpos = 46, bgcol = "white", breakcol = "black",
+           style = "slash", brw = 0.02)
+
+coord <- data.frame(x = c(xh, rev(xh)), y = c(yh[, "lwr"], rev(yh[, "upr"])))
+polygon(coord, border = NA, col = adjustcolor("black", alpha = 0.2))
+
+text(115, 1.45, label = substitute(hat(y[i]) == b0 + b1 * x[i] ~~~~ (r^2 == r2),
+                                   list(b0 = co[1], b1 = co[2], r2 = co[3])))
+
+# Observed points
+matplot(x, y, pch = 19, col = "red3", add = TRUE)
+```

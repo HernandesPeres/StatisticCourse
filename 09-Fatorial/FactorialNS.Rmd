@@ -1,0 +1,111 @@
+---
+title: "Factorial Experiment - Non-significant Interaction"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Introduction
+
+A researcher designed a factorial experiment in a Completely Randomized Design (CRD) with 5 replications to evaluate the effect of harvest time and combine type on grain loss (kg/ha). Three harvest times (H1, H2, H3) and two types of combine harvesters (T1, T2) were tested.
+
+```{r}
+rm(list=ls())
+
+# Load dataset
+data <- read.table("DataColheitadeira.txt", header=TRUE)
+
+# Convert to factors
+data$trat <- factor(data$trat)
+data$horario <- factor(data$horario)
+data$tipo <- factor(data$tipo)
+data$rep <- factor(data$rep)
+
+str(data)
+head(data)
+
+attach(data)
+
+```
+
+### Exploratory graphs
+```{r}
+library(lattice)
+
+# By harvester type
+xyplot(perda ~ horario, groups = tipo, data = data, jitter.x = TRUE,
+       xlab = "Harvest Time", ylab = "Loss (kg/ha)", type = c("p", "a"),
+       lty = c(1, 1), lwd = c(2, 2), col = c("red", "blue"),
+       key = list(x = 0.02, y = 0.9, columns = 1,
+                  text = list(lab = c("Type 1", "Type 2")),
+                  lines = list(lty = c(1, 1), lwd = c(2, 2), col = c("red", "blue"))))
+
+# By harvest time
+xyplot(perda ~ tipo, groups = horario, data = data, jitter.x = TRUE,
+       xlab = "Harvester Type", ylab = "Loss (kg/ha)", type = c("p", "a"),
+       lty = 1, lwd = 2, col = c("red", "blue", "green"),
+       key = list(x = 0.02, y = 0.9, columns = 1,
+                  text = list(lab = c("H1", "H2", "H3")),
+                  lines = list(lty = 1, lwd = 2, col = c("red", "blue", "green"))))
+
+```
+
+### Assumption Checks
+```{r}
+fit1 <- aov(perda ~ trat)
+anova(fit1)
+
+# Normality test
+shapiro.test(residuals(fit1))
+
+# Homogeneity of variances
+bartlett.test(residuals(fit1) ~ trat)
+```
+
+### ANOVA
+```{r}
+fit2 <- aov(perda ~ horario * tipo)
+anova(fit2)
+```
+
+### Multiple comparisons
+```{r}
+library(agricolae)
+
+# Extract residual degrees of freedom and mean square error
+glr <- anova(fit2)[4,1]
+sqr <- anova(fit2)[4,2]
+qmr <- anova(fit2)[4,3]
+
+# Tukey HSD for Harvest Time
+HSD.test(y = perda, trt = horario, DFerror = glr, MSerror = qmr, alpha = 0.05)
+
+# Tukey HSD for Harvester Type
+HSD.test(y = perda, trt = tipo, DFerror = glr, MSerror = qmr, alpha = 0.05)
+
+```
+
+### Scheffé contrast test
+```{r}
+library(DescTools)
+
+# Contrast: C1 = 2*H1 - H2 - H3
+scheffe <- ScheffeTest(fit2, which = "horario", contrasts = matrix(c(2, -1, -1)), conf.level = 0.95)
+scheffe
+plot(scheffe)
+```
+
+### Analysis using ExpDes.pt package
+```{r}
+library(ExpDes.pt)
+
+fit3 <- fat2.dic(horario, tipo, perda, 
+                 quali = c(TRUE, TRUE), 
+                 mcomp = "tukey", 
+                 fac.names = c("Harvest Time", "Harvester Type"),
+                 sigT = 0.05, sigF = 0.05)
+
+```
+
+
+

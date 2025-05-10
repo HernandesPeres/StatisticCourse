@@ -1,0 +1,198 @@
+---
+title: "Introduction to R"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Objects in R
+
+R is an object-oriented language.
+
+```{r}
+x <- 10  # The '<-' operator works like '=' in Python.
+x
+
+x <- sqrt(2)  # Store the square root of 2 in x.
+x
+
+y <- sqrt(5)  # Store the square root of 5 in y.
+y
+
+y + x  # Sum of x and y.
+```
+
+### Arithmetic Operations
+
+R can be used for simple arithmetic expressions:
+
+```{r}
+1 + 2 + 3   # Addition
+2 + 3 * 4   # Multiplication takes precedence
+3 / 2 + 1   # Division precedes addition
+4 * 3^3     # Power operation
+```
+
+### Common Mathematical Functions
+
+```{r}
+sqrt(2)      # Square root
+27^(1/3)     # Cube root
+64^(1/4)     # Fourth root
+sin(pi)      # Sine of pi (should be close to zero)
+```
+
+Some common mathematical functions in R:
+
+-   `sqrt()`: Square root
+-   `abs()`: Absolute value
+-   `sin(), cos(), tan()`: Trigonometric functions
+-   `asin(), acos(), atan()`: Inverse trigonometric functions
+-   `sinh(), cosh(), tanh()`: Hyperbolic functions
+-   `asinh(), acosh(), atanh()`: Inverse hyperbolic functions
+-   `exp(), log()`: Exponential and natural logarithm
+
+```{r}
+log(5)    # Natural logarithm (ln)
+log10(5)  # Logarithm base 10
+log2(5)   # Logarithm base 2
+exp(1.61) # Exponential function
+```
+
+### Vectors
+
+```{r}
+x1 <- 10
+x1
+
+x2 <- c(1, 3, 6)
+x2
+x2[1]         # First element
+x2[2]         # Second element
+length(x2)    # Length of vector
+
+is.vector(x2)
+is.matrix(x2)
+is.numeric(x2)
+is.character(x2)
+```
+
+### Creating Sequences
+
+```{r}
+x3 <- 1:10                 # Sequence from 1 to 10
+x3
+
+x4 <- seq(0, 1, by = 0.1)  # Sequence from 0 to 1 with step 0.1
+x4
+x4[x4 > 0.5]               # Filter values greater than 0.5
+x4[x4 >= 0.5]              # Filter values greater than or equal to 0.5
+x4 <= 0.5                  # Logical test
+```
+
+### Replicating Values
+
+```{r}
+x5 <- seq(0, 1, length.out = 11)
+x5
+
+x6 <- rep(1, 5)              # Repeat 1 five times
+x6
+
+x7 <- rep(c(1, 2), c(3, 5))  # Repeat 1 three times and 2 five times
+x7
+
+x8 <- rep(1:3, each = 5)
+x8
+
+x9 <- rep(2:5, each = 5)
+x9
+```
+
+### Random Numbers
+
+```{r}
+set.seed(123)
+x10 <- rnorm(10, mean = 70, sd = 10)
+x10
+
+sum(x10)      # Sum
+mean(x10)     # Mean
+var(x10)      # Variance
+sd(x10)       # Standard deviation
+min(x10)      # Minimum value
+max(x10)      # Maximum value
+summary(x10)  # Summary statistics
+summary(1:10)
+```
+
+### Data Frames
+
+```{r}
+d1 <- data.frame(X = 1:10, Y = c(51, 54, 61, 67, 68, 75, 77, 75, 80, 82))
+d1
+
+names(d1)
+d1$X  # Column X
+d1$Y  # Column Y
+
+plot(d1)  # Scatter plot
+title("Scatter Plot of Data Frame")
+plot(d1$X, d1$Y)  # X vs Y
+```
+
+## Reading Data from a File
+
+```{r}
+# Example dataset structure:
+# Rep      A   B   C   D
+# 1      25  31  22  33
+# 2      26  25  26  29
+# 3      20  28  28  31
+# 4      23  27  25  34
+# 5      21  24  29  28
+
+treatments <- rep(c("A", "B", "C", "D"), each = 5)
+
+replicates <- rep(1:5, times = 4)
+
+production <- c(25, 26, 20, 23, 21, 
+                31, 25, 28, 27, 24, 
+                22, 26, 28, 25, 29, 
+                33, 29, 31, 34, 28)
+
+data <- data.frame(treatments, replicates, production)
+data
+
+# Reading from a text file
+# Ensure the file "data_1.csv" exists in the working directory.
+# data <- read.csv("data_1.csv", header = TRUE)
+```
+
+## Lesson 2
+
+```{r}
+y <- c(72.5, 69, 75, 70.8, 71.2, 73, 70, 67.1, 71, 72.5)
+sum(y)
+length(y)
+mean(y)
+median(y)
+sort(y)
+table(y)
+var(y)
+sd(y)
+sqrt(var(y))
+summary(y)
+epm <- sd(y) / sqrt(length(y))
+epm
+
+q1 <- quantile(y, 0.25)
+q2.5 <- quantile(y, 0.025)
+q97.5 <- quantile(y, 0.975)
+IQR(y)
+boxplot(y)
+```

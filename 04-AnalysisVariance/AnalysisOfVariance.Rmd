@@ -1,0 +1,81 @@
+---
+title: "Analysis of variance"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+rm(list = ls())
+```
+
+## Analysis of variance (ANOVA)
+
+### Exemple 1 - Two variety of wheat
+
+```{r}
+var<-rep(1:2,each=5);var
+
+prod<-c(2.0,2.2,2.3,2.5,3.0,3.2,2.8,2.9,2.4,2.7);prod
+
+dados<-data.frame(var, prod);dados
+```
+
+### Calculating the means, variances and standard deviation for each treatment
+
+mean of prod for each var
+
+```{r}
+mean.prod <-tapply(prod, var, mean); mean.prod
+```
+
+variance of prod for each var
+
+```{r}
+var.prod <-tapply(prod, var, var); var.prod     
+```
+
+standard deviation for each trat
+
+```{r}
+sd.prod <- tapply(prod, var, sd); sd.prod      
+```
+
+function aov used for balanced data
+
+```{r}
+fit1 <- aov(prod~factor(var), data = dados)
+anova(fit1)
+
+summary(fit1)
+```
+
+fuction "lm" used for balancend and desbalanced data
+
+```{r}
+fit2 <- lm(prod~factor(var), data = dados)
+anova(fit2)
+```
+
+predicted values
+
+```{r}
+yh<-fitted.values(fit1);yh
+```
+
+residual
+
+```{r}
+res <- residuals(fit1); res
+```
+
+residual standarded
+
+```{r}
+res_Stand <- rstandard(fit1); res_Stand
+round(data.frame(res,res_Stand),5)
+
+# other way to get res
+(prod-yh)
+
+```

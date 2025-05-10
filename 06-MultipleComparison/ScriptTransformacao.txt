@@ -1,0 +1,211 @@
+
+#Transformações usando o software R
+
+#============================
+#Transformação Raiz Quadrada 
+#============================
+
+#Vamos criar um conjunto de dados de contém o número de espécies de aves coletadas em 10 locais.
+# O numero de espécies são: 22, 28, 37, 34, 13, 24, 39, 5, 33, 32
+
+aves<-c(22,28,37,34,13,24,39,5,33,32); aves 
+media <- mean(aves); media
+
+aves_t<- sqrt(aves); aves_t   # Transformação Raiz Quadrada
+media_t<- mean(aves_t); media_t
+
+# A transformação inversa somente da média, nao retorna a media original
+media_to<-(media_t)^2; media_to
+
+aves_o<-(aves_t)^2; aves_o    #retornando aos dados originais
+media_o<-mean(aves_o);media_o #media original
+
+
+#===========================
+#Transformação Logarítmica 
+#===========================
+
+#Crie uma amostra chamada meusdados e verifique os dados em seguida
+
+meusdados<-c(12,19,0,15,145,0,32,5,17); meusdados
+media_o<-mean(meusdados); media_o
+
+
+#Transforme usando log10(x+1) - usa-se x+1 por causa dos zeros
+
+ log10meusdados<-log10(meusdados+1); log10meusdados
+ media_t<-mean(log10meusdados); media_t
+ 
+
+#A transformação de volta para as unidades originais
+
+meusdados_O10 <- (10^(log10meusdados)-1); meusdados_O10
+ 
+
+#Usando logarítmo na base_e = (ln)
+
+lnmeusdados<-log(meusdados+1); lnmeusdados
+ mean(lnmeusdados); var(lnmeusdados)
+
+#A transformação de volta para as unidades originais
+
+meusdados_Oln <- (exp(lnmeusdados)-1); meusdados_Oln
+
+
+#========================
+#Transformação Arco seno 
+#======================== 
+ 
+#Exemplo: observações da proporção de peixes com lesões capturados em sete diferentes redes de pesca (Fowler & Cohen 1998).
+
+x <- c(0.25, 0.31, 0.21, 0.24, 0.3, 0.29, 0.22) ;x
+
+#Primeiro, é obtido o raiz quadrado de cada observação (x) e depois o 
+#seno inverso, o resultado é expressado em graus angulares.
+
+xt <- asin(sqrt(x))*180/pi; xt
+
+#A transformação de volta para as unidades originais
+
+x_O <- sin ((xt)/180*pi)^2; x_O
+
+#Se os dados estiverem em porcentagems, divide-as por 100 antes de realizar a transformação arco-seno.
+
+z <- c(25, 31, 21, 24, 30, 29, 22); z
+
+zt <- asin(sqrt(z/100))*180/pi; zt
+
+# A transformação de volta para as unidades originais (Porcentagens)
+
+z_O <- (sin ((zt)/180*pi)^2)*100; z_O
+
+#Transformação utilizando diretamente as porcentagens, 
+#como realizado  para germinação de sementes
+
+pt<-asin(sqrt(z/100));pt
+
+# A transformação de volta para as unidades originais
+
+p_O <- sin (pt)^2*100; p_O
+
+
+#======================
+#Transformação Box Cox 
+#======================
+
+trat<-rep(1:5, each=6); trat
+repet<-rep(1:6, 5); repet
+resp<-c(2370,1687,2592,2283,2910,3020,1282,1527,871,1025,825,920,562,321,
+        636,317,485,842,173,127,132,150,129,227,193,71,82,62,96,44)
+dados<-data.frame(trat,repet, resp); dados
+fit1 <- aov(resp ~ factor(trat), data=dados)
+anova(fit1) # para conhecer os resíduos
+
+par(mfrow=c(2,2)) # divide a tela grafica em 2 linhas e 2 colunas
+plot(fit1)
+layout(1) # retorna a tela grafica para uma linha e uma coluna
+
+
+#Media e desvio padrao
+#-------------------------
+n <- length(dados$resp); n
+# Estimativas dos parâmetros
+xb <- mean(dados$resp); xb # mu
+sx <- sd(dados$resp); sx   # sigma
+
+
+## 1. Gráfico QQ sem envelope
+##############################
+qqnorm(dados$resp); qqline(dados$resp, col=2)
+x11()  # abrir nova tela grafica
+
+
+## 2. Gráfico QQ com envelope
+##############################
+
+nsim <- 100 # Número de simulações
+conf <- 0.95 # Coef. de confiança
+# Dados simulados ~ normal
+dadossim <- matrix(rnorm(n * nsim, mean = xb, sd = sx), nrow = n)
+dadossim <- apply(dadossim, 2, sort)
+# Limites da banda e média
+infsup <- apply(dadossim, 1, quantile, probs = c((1 - conf) / 2,
+(1 + conf) / 2))
+xbsim <- rowMeans(dadossim)
+# Gráfico
+faixay <- range(dados$resp, dadossim)
+qq0 <- qqnorm(dados$resp, main = "", xlab = "Quantis teóricos da distribuição normal padrão", pch = 20,
+ylab = "Quantis observados da amostra", ylim = faixay)
+eixox <- sort(qq0$x)
+lines(eixox, xbsim)
+lines(eixox, infsup[1,])
+lines(eixox, infsup[2,])
+
+## 3. Estimar Lambda
+######################
+#install.packages("MASS")
+library(MASS)
+boxcox(resp ~ trat, data=dados, plotit=T)
+boxcox(resp ~ trat, data=dados, lam=seq(-1, 1, 1/10))#zoom na região de interesse
+locator()    # para achar as coordenadas do ponto, o x corresponde ao lambda.
+#Para verificar as coordenadas do ponto, clique com o botao direito do mouse
+#no ponto de curvatura maxima (acima dos 95%) e depois clique no mesmo 
+#ponto com o botao esquerdo do mouse e escolha stop.
+
+
+## 4. Transformar os dados
+###########################
+#install.packages("FitAR")
+require(FitAR)
+
+z<-dados$resp #criando o objeto z como a variavel resposta dos dados
+lambda<-0.1 # valor de lambda estimado no passo anterior
+dados$respt<-bxcx(z, lambda)# respt é o valor transformado
+dados
+
+
+## 5. Gráfico QQ com envelope após transformaçao
+##################################################
+n <- length(dados$respt); n
+# Estimativas dos parâmetros
+xbt <- mean(dados$respt); xbt # mu  transform
+sxt <- sd(dados$respt); sxt   # sigma  transform
+
+nsimt <- 100 # Número de simulações
+conf <- 0.95 # Coef. de confiança
+# Dados simulados ~ normal
+dadossimt <- matrix(rnorm(n * nsimt, mean = xbt, sd = sxt), nrow = n)
+dadossimt <- apply(dadossimt, 2, sort)
+# Limites da banda e média
+infsupt <- apply(dadossimt, 1, quantile, probs = c((1 - conf) / 2,
+(1 + conf) / 2))
+xbsimt <- rowMeans(dadossimt)
+# Gráfico
+faixayt <- range(dados$respt, dadossimt)
+qq0t <- qqnorm(dados$respt, main = "", xlab = "Quantis teóricos da distribuição normal padrão", pch = 20,
+ylab = "Quantis observados da amostra", ylim = faixayt)
+eixoxt <- sort(qq0t$x)
+lines(eixox, xbsimt)
+lines(eixox, infsupt[1,])
+lines(eixox, infsupt[2,])
+
+## 6. ANOVA após transformação
+###############################
+fit2<- aov(dados$respt ~ factor(trat), data=dados)
+anova(fit2)
+
+par(mfrow=c(2,2)) # divide a tela grafica em 2 linhas e 2 colunas
+plot(fit2)
+layout(1) # retorna a tela grafica para uma linha e uma coluna
+
+## 7. para voltar aos dados originais
+######################################
+z2<-bxcx(dados$respt, lambda, InverseQ=TRUE)
+z2
+sum(abs(z2-z)) #verifique que esta soma é zero
+
+
+
+
+
+

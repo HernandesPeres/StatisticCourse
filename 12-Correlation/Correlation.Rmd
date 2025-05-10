@@ -1,0 +1,181 @@
+---
+title: "Correlation"
+author: "Hernandes Peres"
+date: "`r Sys.Date()`"
+output: html_document
+---
+# 1
+```{r}
+# Clear environment
+rm(list = ls())
+ls()
+
+# Load dataset
+data <- read.table("3EST220-DataTemperatura.txt", header = TRUE)
+str(data)
+head(data)
+attach(data)
+```
+
+Descriptive statistics
+
+```{r}
+# Variances
+var(y1)
+var(y2)
+
+# Covariance
+cov(y1, y2)
+
+# Remove first column if it's not a response variable
+data_clean <- data[, -1]
+data_clean
+```
+
+Correlation analysis
+
+```{r}
+# Pearson correlation matrix
+cor(data_clean, method = "pearson")
+
+# Hypothesis test for correlation
+cor.test(y1, y2, method = "pearson", alternative = "two.sided")
+```
+
+**Interpretation:** -H0 (null hypothesis): ρ = 0 (no correlation) -H1 (alternative hypothesis): ρ ≠ 0 -The *p-value* indicates whether the correlation is statistically significant.
+
+Scatterplot
+```{r}
+# Plotting the relationship
+plot(y1, y2, pch = 19, col = "blue",
+     xlab = "y1", ylab = "y2", main = "Scatterplot of y1 vs y2")
+```
+
+# 2
+```{r}
+# Clear all objects
+rm(list = ls())
+ls()
+
+# Load dataset
+data <- read.table("5EST220-DataPesoAlt.txt", header = TRUE)
+str(data)
+head(data)
+attach(data)
+```
+
+Descriptive statistics
+```{r}
+# Variance of each variable
+var(peso)    # Variance of weight
+var(altura)  # Variance of height
+
+# Covariance between height and weight
+cov(peso, altura)
+
+# Remove the first column if it's not a response variable
+data_clean <- data[, -1]
+data_clean
+```
+
+Pearson correlation
+```{r}
+# Pearson correlation matrix
+cor(data_clean, method = "pearson")
+
+# Hypothesis test for Pearson correlation
+cor.test(peso, altura, method = "pearson", alternative = "two.sided")
+```
+
+**Hypothesis Interpretation:**
+H₀ (null hypothesis): ρ = 0 (no linear correlation)
+H₁ (alternative hypothesis): ρ ≠ 0 (there is linear correlation)
+The *p-value* will determine whether the correlation is statistically significant.
+
+```{r}
+# Scatterplot of Height vs Weight
+plot(altura, peso,
+     pch = 19,
+     col = "blue",
+     xlab = "Height (cm)",
+     ylab = "Weight (kg)",
+     main = "Scatterplot: Height vs Weight")
+```
+
+# 3
+
+```{r}
+# Load data
+data <- read.table("7EST220-DataFeijao.txt", header = TRUE)
+
+# Convert genotypes and blocks to factors
+data$gen <- factor(data$gen)
+data$bloco <- factor(data$bloco)
+
+str(data)
+head(data)
+
+attach(data)
+```
+
+ANOVA for all response Variables
+```{r}
+# Load ExpDes.pt package
+require(ExpDes.pt)
+
+# Column index where response variables start
+col_start <- 3
+
+# Perform ANOVA with Scott-Knott for each response variable
+for(i in col_start:ncol(data)) {
+  cat("\n", "Response Variable:", names(data)[i], "\n")
+  dbc(gen, bloco, data[, i], quali = TRUE, mcomp = "sk", sigT = 0.05, sigF = 0.05)
+}
+```
+
+Correlation between two response variables
+```{r}
+# Correlation between productivity and 100-seed weight
+cor(prod, pcs)
+
+# Pearson correlation test
+cor.test(prod, pcs, method = "pearson", alternative = "two.sided", conf.level = 0.95)
+
+```
+
+Correlation matrix for all response variables
+```{r}
+# Remove genotype and block columns
+responses <- data[, -c(1, 2)]
+head(responses)
+
+# Correlation matrix
+r <- cor(responses)
+r
+```
+
+p-values for Pearson Correlation Tests
+
+```{r}
+# Matrix of p-values for correlation significance
+pvalue <- matrix(0, ncol(responses), ncol(responses))
+colnames(pvalue) <- rownames(pvalue) <- colnames(responses)
+
+for(i in 1:ncol(responses)) {
+  for(j in 1:ncol(responses)) {
+    pvalue[i, j] <- cor.test(responses[, i], responses[, j], method = "pearson")$p.value
+  }
+}
+
+pvalue
+```
+
+Correlation Between 'flor' and Other Variables
+
+```{r}
+# Correlation of 'flor' with all other variables
+x <- responses[[1]]  # 'flor'
+lapply(responses[-1], cor.test, x = x, method = "pearson")
+
+```
+

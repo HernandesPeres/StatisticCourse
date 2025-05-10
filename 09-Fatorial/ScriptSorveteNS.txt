@@ -1,0 +1,109 @@
+#EXPERIMENTO FATORIAL NO DBC com INTERACAO NAO SIGNIFICATIVA
+
+rm(list=ls())
+ls()
+
+#------------------------------------------------------------------------------------------
+# dados (segredo está em como montar a planilha, para provocar o confundimento correto)
+dados <- read.table("5EST220-DataSorvete.txt", header=TRUE)
+dados$trat<-factor(dados$trat)
+dados$bloco<-factor(dados$bloco)
+dados$A<-factor(dados$A)
+dados$B<-factor(dados$B)
+str(dados)
+dados
+attach(dados)
+
+#---------------------------------------------------------------------------------------------------
+# gráficos exploratórios
+require(lattice)
+xyplot(gordura~A, groups=B, data=dados, jitter.x=TRUE, type=c("p","a")) # por B
+xyplot(gordura~B, groups=A, data=dados, jitter.x=TRUE, type=c("p","a")) # por A
+#------------------------------------------------------------------------------------
+# checagem pressuposicao
+
+fit1 <- aov(gordura~trat+bloco)
+anova(fit1)
+fit1$res
+
+shapiro.test(residuals(fit1)) # teste para normalidade
+bartlett.test(residuals(fit1)~trat) # teste para homogeneidade
+
+#------------------------------------------------------------------------------------------
+# análise de variância 
+fit2 <- aov(gordura~bloco+A*B)
+anova(fit2)
+fit2$res
+
+model.tables(fit2, "means") #calculo das medias
+#------------------------------------------------------------------------------------------
+#TESTES DE COMPARACOES
+# para as funções do agricole a seguir são necessários os ingredientes:
+require(agricolae)
+glr <- df.residual(fit2);glr  # extrai o grau de liberdade do resíduo
+glr<-anova(fit2)[5,1];glr #outra maneira
+
+sqr <- deviance(fit2);sqr     # extrai a soma de quadrados dos resíduos "desviância"
+sqr<-anova(fit2)[5,2];sqr #outra maneira
+
+qmr <- sqr/glr ; qmr        # calcula o quadrado médio do resíduo
+qmr<-anova(fit2)[5,3];qmr   #outra maneira
+
+##################################################
+# Tukey, HSD Honestly Significant Difference
+##################################################
+
+tuk <- HSD.test(y=gordura, trt=A, DFerror=glr, MSerror=qmr, alpha=0.05)
+tuk
+
+tuk <- HSD.test(y=gordura, trt=B, DFerror=glr, MSerror=qmr, alpha=0.05)
+tuk
+
+###########################################################
+# Teste de Scheffé para o fator A 
+###########################################################
+#C1 = 2mA1 – mA2 – mA3
+require(DescTools)
+sch1<-ScheffeTest(fit2, which ="A" , contrasts=matrix( c(2, -1, -1)),conf.level = 0.95 );sch1
+plot(sch1)
+
+##################################################
+Teste t para o fator B
+##################################################
+#C1= 2mB1+2mB2+2mB3-3mB4-3mB5
+#C2= 2mB1-mB2-mB3
+#C3= mB2-mB3
+#C4= mB4-mB5
+
+require(gmodels)
+cmat<-matrix( c(2, 2, 2, -3, -3,
+                2, -1, -1, 0, 0,
+                0,  1, -1, 0, 0,
+                0,  0, 0, 1, -1), ncol=4)
+cmat
+fit.contrast(aov(gordura~A*B+bloco),B, c( 0,  0, 0, 1, -1),conf.int=0.95)
+
+cmat <- rbind("B1+B2+B3 vs B4+B5" =c(2, 2, 2, -3, -3),
+"B1 vs B2+B3"=c( 2, -1, -1, 0, 0),
+"B2 vs B3" = c( 0, 1, -1, 0, 0),
+"B4 vs B5"= c(0, 0, 0, 1, -1))
+cmat
+testet<-fit.contrast(fit2,B,cmat,conf.int=0.95);testet
+
+sch2<-ScheffeTest(fit2, which ="B" , contrasts=cmat,conf.level = 0.95 );sch2
+#------------------------------------------------------------------------------------------
+USANDO O PACOTE ExpDes.pt
+ 
+require(ExpDes.pt)
+fit3<-fat2.dbc(A, B,bloco, gordura, quali = c(TRUE, TRUE), mcomp = "tukey", fac.names = c("A", "B"),
+ sigT = 0.05, sigF = 0.05)
+
+#------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
