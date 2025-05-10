@@ -91,9 +91,6 @@ knitr::kable(results)
 ### 4. Homoscedasticity Tests
 
 ```{r fig.height=6, fig.width=10}
-plot(fitted(fit), resid(fit), col=4, pch=19, 
-     xlab="Fitted values", ylab="Residuals")
-
 boxplot(residuals ~ data$variety, 
         col="gray", ylab="Residuals", xlab="Varieties")
 ```
