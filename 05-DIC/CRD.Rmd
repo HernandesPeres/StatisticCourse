@@ -5,43 +5,64 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-### Data Loading
+Loading data
+
 ```{r}
-data <- data.frame(
-  rep = rep(1:5, each=4),
-  variety = factor(rep(c("A", "B", "C", "D"), times=5)),
-  yield = c(25, 31, 22, 33,
-            26, 25, 26, 29,
-            20, 28, 28, 31,
-            23, 27, 25, 34,
-            21, 24, 29, 28)
-)
-str(data)
+data <- data.frame(rep = rep(1:5, each=4),
+                   variety = factor(rep(c("A", "B", "C", "D"), times=5)),
+                   yield = c(25, 31, 22, 33,
+                             26, 25, 26, 29,
+                             20, 28, 28, 31,
+                             23, 27, 25, 34,
+                             21, 24, 29, 28))
+
+knitr::kable(data)
 ```
 
-### ANOVA Analysis
+### 1. ANOVA Analysis
+
+As we have seen, by using the `aov()` function, we can model the ANOVA for the *yield* through the treatment effects, which correspond to the *variety*.
+
 ```{r}
 fit <- aov(yield ~ variety, data = data)
+
 anova(fit)
 ```
 
-### Residual Analysis
-```{r}
-par(mfrow=c(2,2))
-plot(fit)
-layout(1)
+### 2. Residual Analysis
 
+Residual analysis is performed because the assumptions of ANOVA are related to the residual values.
+
+Remember the assumptions of ANOVA:
+
+-   **Additivity:** The effects of the different factors in the model are additive, meaning they do not interact in a non-linear way.
+
+-   **Normality of residuals:** The residuals should follow a normal distribution.
+
+-   **Homogeneity of variance:** The variance of residuals should be constant across groups (also known as homoscedasticity).
+
+-   **Independence of observations:** The observations are independent of each other.
+
+```{r}
 residuals <- fit$residuals
 mean_res <- mean(residuals)
 sd_res <- sd(residuals)
-cat("\n Sample mean =", mean_res, "\n Sample standard deviation =", sd_res, "\n")
 ```
 
-### Normality Tests
-```{r}
+### 3. Normality Tests
+
+Installing and loading the `"nortest"` package, which is used for a variety of normality tests, such as:
+
+-   Kolmogorov-Smirnov Tests - `ks.test()`
+-   Lilliefors Test - `lillie.test()`
+-   Cramer-von Mises test - `cvm.test()`
+-   Shapiro-Wilk Normality Test - `shapiro.test()`
+-   Shapiro-Francia test - `sf.test()`
+-   Anderson-Darling test - `ad.test()`
+
+```{r warning=FALSE}
+# install.packages(nortest)
 library(nortest)
-qqnorm(residuals, col="blue", pch=20)
-qqline(residuals, col="red", lwd=2)
 
 t1 <- ks.test(residuals, "pnorm", mean_res, sd_res)
 t2 <- lillie.test(residuals)
@@ -49,52 +70,82 @@ t3 <- cvm.test(residuals)
 t4 <- shapiro.test(residuals)
 t5 <- sf.test(residuals)
 t6 <- ad.test(residuals)
-
-tests <- c(t1$method, t2$method, t3$method, t4$method, t5$method, t6$method)
-statistics <- c(t1$statistic, t2$statistic, t3$statistic, t4$statistic, t5$statistic, t6$statistic)
-p_values <- c(t1$p.value, t2$p.value, t3$p.value, t4$p.value, t5$p.value, t6$p.value)
-results <- data.frame(Test = tests, Statistic = statistics, P_Value = p_values)
-print(results, digits=4)
 ```
 
-### Homoscedasticity Tests
-```{r}
-plot(fitted(fit), resid(fit), col=4, pch=19, xlab="Fitted values", ylab="Residuals")
-boxplot(residuals ~ data$variety, col=c(2,3,4,5), ylab="Residuals", xlab="Varieties")
+Taking the name, statistics, and p-values from each performed normality test and organizing them into a dataframe.
 
+```{r}
+tests <- c(t1$method, t2$method, t3$method, 
+           t4$method, t5$method, t6$method)
+statistics <- c(t1$statistic, t2$statistic, t3$statistic, 
+                t4$statistic, t5$statistic, t6$statistic)
+p_values <- c(t1$p.value, t2$p.value, t3$p.value, 
+              t4$p.value, t5$p.value, t6$p.value)
+```
+
+```{r}
+results <- data.frame(Test = tests, Statistic = statistics, P_Value = p_values)
+knitr::kable(results)
+```
+
+### 4. Homoscedasticity Tests
+
+```{r fig.height=6, fig.width=10}
+plot(fitted(fit), resid(fit), col=4, pch=19, 
+     xlab="Fitted values", ylab="Residuals")
+
+boxplot(residuals ~ data$variety, 
+        col="gray", ylab="Residuals", xlab="Varieties")
+```
+
+Installing and loading the package `lawstat` we can have acess to the function `levene.test()` to perform **Levene's Test of Equality of Variances**
+
+```{r warning=FALSE}
+# install.packages("lawstat")
 library(lawstat)
 levene.test(residuals, data$variety)
 ```
 
-### Independence Check
-```{r}
-plot(fitted(fit), residuals, pch=19, col=4, xlab="Fitted Values", ylab="Residuals")
+### 5. Independence Check
+
+It\`s looks difficult to conclude something right?
+```{r fig.height=5, fig.width=10}
+# install.packages("car")
+library(car)
+
+qqPlot(residuals, 
+       main = "Q-Q Plot with Confidence Envelope",
+       col = "blue",
+       pch = 20,
+       envelope = 0.95)  # 95% confidence envelope
 ```
 
-### Multiple Comparisons
+### 6. Multiple Comparisons
 
-```{r}
+By installing and loading the package `ExpDes` we can speed up the process, utilizing `dic()` for and Completed Ramdomized Design (CMD)
+
+```{r warning=FALSE}
+# install.packages("ExpDes.pt")
 library(ExpDes.pt)
-dic(data$variety, data$yield, quali = TRUE, mcomp = "lsdb", hvar= "bartlett", sigT = 0.05, sigF = 0.05)
+
+dic(data$variety, data$yield, quali = TRUE, 
+    mcomp = "lsdb", hvar= "bartlett", sigT = 0.05, sigF = 0.05)
 ```
 
-# Completely randomized Design with unbalanced Data
+### 7. CRD - Unbalanced Data
 
 ```{r}
-ls()
-remove(list=ls(all=TRUE))
+remove(list=ls())
 ls()
 ```
 
 ```{r}
-data_unbalanced <- read.table("DataDesbalan.txt", head=TRUE)
-str(data_unbalanced)
+data_unbalanced <- read.table("DataUnbalance.txt", head=TRUE)
 data_unbalanced$vend <- factor(data_unbalanced$vend)
-str(data_unbalanced)
-attach(data_unbalanced)
 
 n <- length(data_unbalanced$result)
-cat("\n n =", n, "\n")
+
+knitr::kable(data_unbalanced)
 ```
 
 ```{r}
@@ -106,17 +157,23 @@ anova(fit_unbalanced)
 residuals_unbalanced <- fit_unbalanced$residuals
 mean_res_unbalanced <- mean(residuals_unbalanced)
 sd_res_unbalanced <- sd(residuals_unbalanced)
-cat("\n Sample mean =", mean_res_unbalanced, "\n Sample standard deviation =", sd_res_unbalanced, "\n")
 ```
 
-```{r}
-qqnorm(residuals_unbalanced, col="blue", pch=20)
-qqline(residuals_unbalanced, col="red", lwd=2)
+```{r fig.height=5, fig.width=10}
+# install.packages("car")
+library(car)
+
+qqPlot(residuals_unbalanced, 
+       main = "Q-Q Plot with Confidence Envelope",
+       col = "blue",
+       pch = 20,
+       envelope = 0.95)  # 95% confidence envelope
 ```
 
-```{r}
+```{r warning=FALSE}
 library(nortest)
-t1 <- ks.test(residuals_unbalanced, "pnorm", mean_res_unbalanced, sd_res_unbalanced)
+t1 <- ks.test(residuals_unbalanced, 
+              "pnorm", mean_res_unbalanced, sd_res_unbalanced)
 t2 <- lillie.test(residuals_unbalanced)
 t3 <- cvm.test(residuals_unbalanced)
 t4 <- shapiro.test(residuals_unbalanced)
@@ -133,11 +190,16 @@ statistics <- c(t1$statistic,
                 t5$statistic, 
                 t6$statistic)
 
-p_values <- c(t1$p.value, t2$p.value, t3$p.value, t4$p.value, t5$p.value, t6$p.value)
+p_values <- c(t1$p.value, t2$p.value, t3$p.value, 
+              t4$p.value, t5$p.value, t6$p.value)
+```
 
-results <- data.frame(Test = tests, Statistic = statistics, P_Value = p_values)
+```{r}
+results <- data.frame(Test = tests, 
+                      Statistic = statistics, 
+                      P_Value = p_values)
 
-print(results, digits=4)
+knitr::kable(results)
 ```
 
 ```{r}
@@ -145,7 +207,7 @@ fit_final <- aov(result ~ vend, data = data_unbalanced)
 anova(fit_final)
 ```
 
-```{r}
+```{r warning=FALSE}
 library(ExpDes.pt)
 dic(data_unbalanced$vend, data_unbalanced$result, quali = TRUE, mcomp = "tukey", sigT = 0.05, sigF = 0.05)
 ```
