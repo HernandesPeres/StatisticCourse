@@ -1,10 +1,47 @@
 ---
 title: "Correlation"
-author: "Hernandes Peres"
-output: 
-  github_document:
-    html_preview: True
+author: 
+  - name: Undergrad Hernandes Peres
+    email: Hernandes.panichi@ufv.br
+    affiliation:
+      - name: Biometrics and Quantitative genetics Lab. 
+        url: https://idata.ufv.br/
+        city: Viçosa
+        region: Minas Gerais
+        country: Brazil
+format: 
+  html:
     toc: true
+    toc-depth: 3
+    toc-title: Sections
+    toc-location: left 
+    number-sections: true
+    number-depth: 4
+    toc_float: true
+    theme: [zephyr, theme.scss]
+    embed-resources: true
+    self-contained: true
+    anchor-sections: true
+    smooth-scroll: true
+    link-external-newwindow: false
+    code-fold: false
+    code-overflow: wrap
+    code-block-border-left: "#781c1e"
+    code-copy: hover
+    code-summary: "Show/Hide Code"
+    lang: en
+    fig-format: png
+    fig-responsive: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    page-layout: article
+    csl: apa.csl
+    css: styles.css
+    title-block-banner: true
+    title-block-banner-color: 'white'
+    highlight-style: github
+editor_options: 
+  chunk_output_type: console
 ---
 # Correlation
 
