@@ -9,7 +9,8 @@ Loading data
 
 ```{r}
 data <- data.frame(rep = rep(1:5, each=4),
-                   variety = factor(rep(c("A", "B", "C", "D"), times=5)),
+                   trat = factor(rep(c("A", "B", "C", "D"),
+                                        times=5)),
                    yield = c(25, 31, 22, 33,
                              26, 25, 26, 29,
                              20, 28, 28, 31,
@@ -19,12 +20,114 @@ data <- data.frame(rep = rep(1:5, each=4),
 knitr::kable(data)
 ```
 
-### 1. ANOVA Analysis
+### 1. Creating sketch
 
-As we have seen, by using the `aov()` function, we can model the ANOVA for the *yield* through the treatment effects, which correspond to the *variety*.
+When we have a daily chore or an activity that is performed frequently, we can create functions to save time and reduce repetitive work.
+
+By utilizing the syntax `function(x) {}`, we can define the behavior we want to automate.
+
+In this example, I created a function to combine all positions between the number of rows and columns using the `expand.grid()` function. Then, to follow one of the principles of experimental design — **randomization** — I used the `sample()` function to randomly assign positions within the created object.
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+library(dplyr)
+library(desplot)
+
+generate_positions <- function(n_cols, n_rows) {
+  expand.grid(col = 1:n_cols, row = 1:n_rows) %>%
+    sample_frac()
+}
+
+generate_positions_by_block <- function(n_rows, n_cols) {
+  expand.grid(row = 1:n_rows, col = 1:n_cols)
+}
+
+field_layout <- function(data, n_col, n_row, design) {
+  data$rep <- as.factor(data$rep)
+  data$trat <- as.factor(data$trat)
+  sketch <- list()
+
+  if (design == "DIC" || design == "CRD") {
+    positions <- generate_positions(n_col, n_row)
+    data <- data %>%
+      mutate(col = positions$col, row = positions$row)
+
+    plot <- desplot(trat ~ col * row,
+                    data = data,
+                    text = trat,
+                    main = "Field Layout - CRD",
+                    show.key = FALSE,
+                    cex = 0.8,
+                    show.legend = NA,
+                    col.regions = colorRampPalette(c("#d7191c", 
+                                                     "#fdae61", 
+                                                     "#ffffbf", 
+                                                     "#a6d96a",
+                                                     "#1a9641"))(nlevels(data$trat)))
+}
+
+  else if (design == "DBC" || design == "RCBD") {
+    colnames(data)[colnames(data) == "bloco"] <- "rep"
+    data <- arrange(data, rep)
+
+    n_trat <- nlevels(data$trat)
+    n_rep <- nlevels(data$rep)
+    n_plots <- n_trat * n_rep
+
+    if ((n_row * n_col) %% n_rep != 0)
+      stop("Number of rows and columns must result in equal-sized blocks.")
+
+    plots_per_block <- n_plots / n_rep
+    block_cols <- n_col / n_rep
+    block_rows <- n_row
+
+    positions_list <- vector("list", n_rep)
+    for (i in 1:n_rep) {
+      block_pos <- generate_positions_by_block(block_rows, block_cols)
+      block_pos$col <- block_pos$col + (i - 1) * block_cols
+      positions_list[[i]] <- block_pos[sample(nrow(block_pos)), ]
+    }
+
+    all_positions <- do.call(rbind, positions_list)
+    data <- data[order(data$rep), ]
+    data$col <- all_positions$col
+    data$row <- all_positions$row
+
+    plot <- desplot(trat ~ col + row | rep,
+                    data = data,
+                    text = trat,
+                    cex = 0.7,
+                    shorten = "no",
+                    show.legend =F,
+                    out1 = rep,
+                    main = "Field Layout - RCBD",
+                    col.regions = colorRampPalette(c("#d7191c", 
+                                                     "#fdae61", 
+                                                     "#ffffbf",
+                                                     "#a6d96a", 
+                                                     "#1a9641"))(nlevels(data$trat)))
+  }
+  sketch$plot <- plot
+  sketch$data <- data
+  return(sketch)
+}
+```
+
 
 ```{r}
-fit <- aov(yield ~ variety, data = data)
+set.seed(10)
+
+field_layout(data = data,
+             n_row = 4,
+             n_col = 5,
+             design = "DIC")
+```
+
+### 1. ANOVA Analysis
+
+As we have seen, by using the `aov()` function, we can model the ANOVA for the *yield* through the treatment effects, which correspond to the *trat*.
+
+```{r}
+fit <- aov(yield ~ trat, data = data)
 
 anova(fit)
 ```
@@ -51,7 +154,7 @@ sd_res <- sd(residuals)
 
 ### 3. Normality Tests
 
-Installing and loading the `"nortest"` package, which is used for a variety of normality tests, such as:
+Installing and loading the `"nortest"` package, which is used for a trat of normality tests, such as:
 
 -   Kolmogorov-Smirnov Tests - `ks.test()`
 -   Lilliefors Test - `lillie.test()`
@@ -91,7 +194,7 @@ knitr::kable(results)
 ### 4. Homoscedasticity Tests
 
 ```{r fig.height=6, fig.width=10}
-boxplot(residuals ~ data$variety, 
+boxplot(residuals ~ data$trat, 
         col="gray", ylab="Residuals", xlab="Varieties")
 ```
 
@@ -100,14 +203,13 @@ Installing and loading the package `lawstat` we can have acess to the function `
 ```{r warning=FALSE}
 # install.packages("lawstat")
 library(lawstat)
-levene.test(residuals, data$variety)
+levene.test(residuals, data$trat)
 ```
 
 ### 5. Independence Check
 
 It\`s looks difficult to conclude something right?
 ```{r fig.height=5, fig.width=10}
-
 plot(residuals,
      type = "b",
      pch = 20,
@@ -126,28 +228,39 @@ By installing and loading the package `ExpDes` we can speed up the process, util
 # install.packages("ExpDes.pt")
 library(ExpDes.pt)
 
-dic(data$variety, data$yield, quali = TRUE, 
+dic(data$trat, data$yield, quali = TRUE, 
     mcomp = "lsdb", hvar= "bartlett", sigT = 0.05, sigF = 0.05)
 ```
 
 ### 7. CRD - Unbalanced Data
 
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 remove(list=ls())
-ls()
+source("ExperimentalDesignFunction.R")
 ```
 
 ```{r}
 data_unbalanced <- read.table("DataUnbalance.txt", head=TRUE)
-data_unbalanced$vend <- factor(data_unbalanced$vend)
+data_unbalanced$trat <- factor(data_unbalanced$trat)
 
 n <- length(data_unbalanced$result)
+```
 
-knitr::kable(data_unbalanced)
+Plotting field layout
+```{r}
+set.seed(7)
+layout <- field_layout(data = data_unbalanced,
+             n_col = 3,
+             n_row = 5, 
+             design = "DIC")
+layout$plot
+```
+```{r}
+knitr::kable(layout$data)
 ```
 
 ```{r}
-fit_unbalanced <- aov(result ~ vend, data = data_unbalanced)
+fit_unbalanced <- aov(result ~ trat, data = data_unbalanced)
 anova(fit_unbalanced)
 ```
 
@@ -157,7 +270,7 @@ mean_res_unbalanced <- mean(residuals_unbalanced)
 sd_res_unbalanced <- sd(residuals_unbalanced)
 ```
 
-```{r fig.height=5, fig.width=10}
+```{r fig.height=5, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
 # install.packages("car")
 library(car)
 
@@ -168,7 +281,7 @@ qqPlot(residuals_unbalanced,
        envelope = 0.95)  # 95% confidence envelope
 ```
 
-```{r warning=FALSE}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(nortest)
 t1 <- ks.test(residuals_unbalanced, 
               "pnorm", mean_res_unbalanced, sd_res_unbalanced)
@@ -179,7 +292,7 @@ t5 <- sf.test(residuals_unbalanced)
 t6 <- ad.test(residuals_unbalanced)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 tests <- c(t1$method, t2$method, t3$method, t4$method, t5$method, t6$method)
 statistics <- c(t1$statistic, 
                 t2$statistic, 
@@ -201,11 +314,11 @@ knitr::kable(results)
 ```
 
 ```{r}
-fit_final <- aov(result ~ vend, data = data_unbalanced)
+fit_final <- aov(result ~ trat, data = data_unbalanced)
 anova(fit_final)
 ```
 
-```{r warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 library(ExpDes.pt)
-dic(data_unbalanced$vend, data_unbalanced$result, quali = TRUE, mcomp = "tukey", sigT = 0.05, sigF = 0.05)
+dic(data_unbalanced$trat, data_unbalanced$result, quali = TRUE, mcomp = "tukey", sigT = 0.05, sigF = 0.05)
 ```

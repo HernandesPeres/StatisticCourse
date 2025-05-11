@@ -1,4 +1,4 @@
-coleta	vend	rep	result
+coleta	trat	rep	result
 7	A	1	29
 11	A	2	27
 9	A	3	31

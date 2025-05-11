@@ -6,7 +6,8 @@ output: html_document
 ---
 
 Loading data
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+source("C:/StatisticsCourse/05-DIC/ExperimentalDesignFunction.R")
 data <- read.table("DataMilho.txt",head=TRUE)
 knitr::kable(data)
 ```
@@ -16,6 +17,11 @@ knitr::kable(data)
 data$trat<-factor(data$trat)
 
 n <- length(data$prod)
+
+field_layout(data = data,
+             n_row = 5,
+             n_col = 4,
+             design = "DIC")$plot
 ```
 
 Residue calculation
@@ -81,6 +87,7 @@ points(mean.res, pch=20, col=1, cex=1.5)
 points(mean.res+sd.res, pch="*", cex=1.5)
 points(mean.res-sd.res, pch="*", cex=1.5)
 ```
+
 With the function `points()` we can set the average over the boxplot
 
 ```{r}
@@ -125,7 +132,7 @@ fit3<- dic(data$trat, data$prod, quali = TRUE,
 
 ### 2. Orthogonal Contrasts
 
-```{r warning=FALSE}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 require(gmodels)
 ```
 
@@ -147,7 +154,7 @@ fit.contrast(fit2, data$trat, c(0, 1, -1,  0))
 ```
 
 ### 3. Scheffe test
-```{r warning=FALSE}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 require(DescTools)
 ```
 Scheffe's method applies to the set of estimates of all possible contrasts among the factor level means, not just the pairwise differences considered by Tukey's method.
