@@ -1,14 +1,19 @@
 ---
 title: "Correlation"
 author: "Hernandes Peres"
-date: "`r Sys.Date()`"
-output: html_document
+output: 
+  github_document:
+    html_preview: True
+    toc: true
 ---
 # Correlation
 
 ## Example 1:
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(dplyr)
+library(knitr)
+library(kableExtra)
+
 rm(list = ls())
 data <- read.table("DataTemperatura.txt", header = TRUE)
 ```
@@ -21,7 +26,11 @@ var(data$y2)
 cov(data$y1, data$y2)
 
 data_clean <- data[, -1]
-knitr::kable(data_clean)
+
+kable(data_clean, format = "html", 
+      caption = "Tabela formatada") %>%
+   kable_styling(bootstrap_options = c("striped", 
+                                      "hover", "condensed", "responsive"))
 ```
 
 Pearson correlation matrix
