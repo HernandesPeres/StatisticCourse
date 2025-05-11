@@ -5,261 +5,202 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-Exercicio de Transformacao
-
-Um pesquisador realizou um experimento inteiramente casualizado com quatro variedades de pessegueiro, visando ao enraizamento de estacas. Após o tempo necessário, o pesquisador anotou o número de estacas enraizadas e obteve os resultados que se seguem.
-
-
+Reading data
 ```{r}
+remove(list=ls())
+data<-read.table("DataTransf.txt", head=TRUE)
 
-ls()# lista todos os objetos criados
-remove(list=ls(all=TRUE)) #remove todos objetos criados
-ls()
+data$trat<-factor(data$trat)
 
+n <- length(data$n.est)
+
+knitr::kable(head(data))
+```
+### 1. Metrics 
+
+Calculating mean and variance
+```{r}
+mean.est <-tapply(data$n.est, data$trat, mean)
+var.est <-tapply(data$n.est, data$trat, var)
 ```
 
+Besides we are running an ANOVA model, it is just to get the residuals values
 ```{r}
-dados<-read.table("DataTransf.txt", head=TRUE)
-str(dados)
-
-dados$trat<-factor(dados$trat)
-str(dados)
-dados
-attach(dados)
-str(dados)
-
-n <- length(n.est)
-cat("\n n =", n, "\n")
-
-```
-
-mean and variance determinate for each treat
-
-```{r}
-mean.est <-tapply(n.est, trat, mean,data=dados); mean.est 
-var.est <-tapply(n.est, trat, var); var.est
-```
-
-res calculation
-
-```{r}
-fit1 <- aov(n.est~trat)
+fit1 <- aov(data$n.est~data$trat)
 anova(fit1)
-names(fit1)
-fit1$fitted.values
-residuos <- data.frame(fit1$residuals)
-res<-residuos[,1]; res
 
+residuos <- data.frame(fit1$residuals)
+res<-residuos[,1]
 
 xb <- mean(res) # mu
 sx <- sd(res) # sigma
-cat("\n Média amostral =", xb, "\n Desvio padrão amostral =", sx, "\n")
-
 ```
 
-Analysis of residuals
+### 2. ANOVA Presupsution
 
-```{r}
-par(mfrow=c(2,2))    # Partição da tela gráfica
-with(fit1,plot(res, col="blue", cex=0.7, xlab="Índices", ylab="Resíduos"))
-abline(h=0,col="red", lwd=2)
-with(fit1,qqnorm(res,col="blue",cex=0.7,xlab="Quantis teóricos",ylab="Quantis amostrais"))
-with(fit1,qqline(res,col="red", lwd=2))
-boxplot(res)
-hist(rstandard(fit1),main="NULL",freq=F, ylim=c(0,0.6))
-lines(seq(-1.5,3,0.01),dnorm(seq(-1.5,3,0.01)),col="red",lwd=3)
-layout(1) # retorna a tela grafica para 1 linha e 1 coluna
+**2.1 Residual normality test**
+
+```{r fig.height=6, fig.width=10, warning=FALSE}
+library(car)
+
+qqPlot(res, 
+       main = "Q-Q Plot with Confidence Envelope",
+       col = "blue",
+       pch = 20,
+       envelope = 0.95)  # 95% confidence envelope
 ```
 
-residual normality
-
-1- Gráfico QQ (Quantil-Quantil)
-
-```{r}
-qqn <- qqnorm(res,col="blue", cex=1, main = "", xlab = "Quantis teóricos N(0,1)", pch = 20,
-ylab = "Quantis amostrais")
-qqline(res, lty = 2, col = "red", lwd=2)
-
-```
-
-2- Gráfico QQ com envelope
-
-```{r}
-nsim <- 500 # Número de simulações
-conf <- 0.95 # Coef. de confiança
-# Dados simulados ~ normal
-dadossim <- matrix(rnorm(n * nsim, mean = xb, sd = sx), nrow = n)
-dadossim <- apply(dadossim, 2, sort)
-# Limites da banda e média
-infsup <- apply(dadossim, 1, quantile, probs = c((1 - conf) / 2,
-(1 + conf) / 2))
-xbsim <- rowMeans(dadossim); xbsim
-# Gráfico
-faixay <- range(res, dadossim)
-qq0  <- qqnorm(res,col="blue", cex=1, main = "", xlab = "Quantis teóricos N(0,1)", pch = 20,
-ylab = "Quantis dos Valores da Amostra", ylim = faixay)
-eixox <- sort(qq0$x)
-lines(eixox, xbsim,lty = 2, col = "red",lwd=2)
-lines(eixox, infsup[1,])
-lines(eixox, infsup[2,])
-```
-
-3- Normality test
-
-```{r}
+```{r warning=FALSE}
 library(nortest)
-t1 <- ks.test(res, "pnorm", xb, sx);t1 # Kolmogorov Smirnov
-t2 <- lillie.test(res);t2 # Lilliefors
-t3 <- cvm.test(res);t3 # Cramér-von Mises
-t4 <- shapiro.test(res);t4 # Shapiro-Wilk
-t5 <- sf.test(res);t5 # Shapiro-Francia
-t6 <- ad.test(res);t6 # Anderson-Darling
+t1 <- ks.test(res, "pnorm", xb, sx);t1
+t2 <- lillie.test(res);t2 
+t3 <- cvm.test(res);t3 
+t4 <- shapiro.test(res);t4 
+t5 <- sf.test(res);t5 
+t6 <- ad.test(res);t6 
 
-# Tabela de resultados
-testes <- c(t1$method, t2$method, t3$method, t4$method, t5$method,
-t6$method)
-estt <- as.numeric(c(t1$statistic, t2$statistic, t3$statistic,
-t4$statistic, t5$statistic, t6$statistic))
-valorp <- c(t1$p.value, t2$p.value, t3$p.value, t4$p.value, t5$p.value,
-t6$p.value)
-resultados <- cbind(estt, valorp)
-rownames(resultados) <- testes
-colnames(resultados) <- c("Estatística", "p-value")
-print(resultados, digits = 4)
+tests <- c(t1$method, t2$method, t3$method, 
+            t4$method, t5$method, t6$method)
+st <- as.numeric(c(t1$statistic, t2$statistic, t3$statistic, 
+                     t4$statistic, t5$statistic, t6$statistic))
+pv <- c(t1$p.value, t2$p.value, t3$p.value, 
+            t4$p.value, t5$p.value, t6$p.value)
 
+results <- data.frame(Test = tests, Statistic = st, P_Value = pv)
+knitr::kable(results)
 ```
 
-homocedasticity errors
+**2.2. Homocedasticity test**
 
 ```{r}
+bartlett.test(res, data$trat)
+```
+**2.3. Independence test**
 
-#1- Gafico diagnostico padrao para checar homocedasticidade.
-plot(fitted(fit1), resid(fit1),pch=19, col=4, xlab="Valores ajustados (médias trat)", ylab="Resíduos")
+```{r fig.height=6, fig.width=10}
+plot(res,
+     type = "b",
+     pch = 20,
+     col = "blue",
+     xlab = "Observation Order",
+     ylab = "Residuals",
+     main = "Residuals in Order of Collection")
+abline(h = 0, col = "red", lty = 2)
+```
+Does it say something?
 
-#2- Gráfico dos resíduos vs tratamentos
-plot.default(trat,res,pch=19, col=4, ylab="Resíduos",xlab="Tratamentos",)
+###  3. Data transformation
 
-##2- Teste de Bartlett (Pode haver número diferente de repetições por tratamento)
-bartlett.test(res, trat)
+**Which transformation should be used?**
 
+When the statistical data comes from counts, it generally follows the *Poisson* distribution, where the mean and variance are equal. In this case, the square root transformation of the data stabilizes the variance, making it independent of the mean. This transformation can also be used when the variance is proportional to the mean.
+
+```{r}
+n_est_transf <- sqrt(data$n.est + 0.5)
+data_tr <- data.frame(coleta = data$coleta, 
+                      trat = data$trat, 
+                      n_est_transf = n_est_transf); data_tr
+
+knitr::kable(data_tr)
 ```
 
-# Data transformation
-
-## Which transformation should be used?
-
-When the statistical data comes from counts, it generally follows the Poisson distribution, where the mean and variance are equal. In this case, the square root transformation of the data stabilizes the variance, making it independent of the mean. This transformation can also be used when the variance is proportional to the mean.
-
+Calculation of means and variances of *n.est* transformed by treatment
 ```{r}
-n_est_transf<-sqrt(n.est+0.5) # sqrt root
-n_est_transf
-dados_tr<-data.frame(coleta, trat, n_est_transf); dados_tr
-str(dados_tr)
-
-detach(dados) 
-attach(dados_tr)
+mean.est.transf <- tapply(n_est_transf, data$trat, mean); mean.est.transf
+var.est.transf <- tapply(n_est_transf, data$trat, var); var.est.transf
 ```
 
-Calculation of means and variances of n.est transformed by trat
-
+Veryfing the residual variance from the transformated data
 ```{r}
-mean.est.transf <-tapply(n_est_transf, trat, mean); mean.est.transf
-var.est.transf <-tapply(n_est_transf, trat, var); var.est.transf
-```
-
-Anlasys of variance of the transformed data
-
-```{r}
-fit2<- aov(n_est_transf~trat)
+fit2 <- aov(n_est_transf~data$trat)
 anova(fit2)
 
 res2 <- fit2$residuals; res2
 
-# residuals estimations
-xb <- mean(res2) # mean
-sx <- sd(res2) # standard deviation
-cat("\n Média amostral =", xb, "\n Desvio padrão amostral =", sx, "\n")
+xb <- mean(res2)
+sx <- sd(res2) 
 ```
 
-error nomality verification
-
+Error nomality verification
 ```{r}
 nsim <- 500 # Number os observation
 conf <- 0.95 # Conf of reability
 ```
 
-### Simulated data
-
+We perform simulations to compare the observed residuals with the confidence envelope expected under the assumption of normality
 ```{r}
-dadossim <- matrix(rnorm(n * nsim, mean = xb, sd = sx), nrow = n)
-dadossim <- apply(dadossim, 2, sort)
+datasim <- matrix(rnorm(n * nsim, mean = xb, sd = sx), nrow = n)
+datasim <- apply(datasim, 2, sort)
 
-infsup <- apply(dadossim, 1, quantile, probs = c((1 - conf) / 2,(1 + conf) / 2))
-xbsim <- rowMeans(dadossim); xbsim
+infsup <- apply(datasim, 1, quantile, 
+                probs = c((1 - conf) / 2,(1 + conf) / 2))
+
+xbsim <- rowMeans(datasim); xbsim
+```
+Residuals normality distribuition
+```{r fig.height=6, fig.width=10}
+library(car)
+
+qqPlot(res2, 
+       main = "Q-Q Plot with Confidence Envelope",
+       col = "blue",
+       pch = 20,
+       envelope = 0.95) 
 ```
 
-Chart
-
-```{r}
-faixay <- range(res2, dadossim)
-qq0  <- qqnorm(res2,col="blue", cex=1, main = "", xlab = "Quantis teóricos N(0,1)", pch = 20,
-ylab = "Quantis dos Valores da Amostra", ylim = faixay)
-eixox <- sort(qq0$x)
-lines(eixox, xbsim,lty = 2, col = "red",lwd=2)
-lines(eixox, infsup[1,])
-lines(eixox, infsup[2,])
-```
-
-Shapiro-Wilk test
-
+Verify using statistics numbers
 ```{r}
 shapiro.test(res2)
 ```
 
-Checking the homoscedasticity of the errors
-
+Checking the homoscedasticity of residuals by Bartlett test
 ```{r}
-plot.default(trat,n_est_transf,pch=19, col=4, ylab="Número de Estacas Enraizadas",xlab="Tratamentos")
+bartlett.test(res2, data_tr$trat)
 ```
 
-Bartlett test
+Checking the independence of the residual
 
-```{r}
-bartlett.test(res2, trat)
-```
-
-Checking the independence of the erros
-
-The independence of the residuals can be assessed through a residuals vs. predicted values plot. If independence exists, there will be an absence of pattern.
-
-```{r}
-plot(fitted(fit2), resid(fit2),pch=19, col=4,xlab="Adjusted values (Transf data)", ylab="Res.")
-```
+The independence of the residuals can be assessed through a residuals vs. predicted values plot. If independence exists, there will be an absence of pattern.s
 
 Residual vs. order of collection of the response variable values plot
+data
+```{r fig.height=6, fig.width=10}
+# Se 'res2' é o vetor de resíduos e 'data$coleta' indica a ordem de coleta
+plot(res2,
+     type = "b",
+     pch = 20,
+     col = "blue",
+     xlab = "Observation Order",
+     ylab = "Residuals",
+     main = "Residuals in Order of Collection")
+abline(h = 0, col = "red", lty = 2)
 
-```{r}
-da<-data.frame(coleta,res2);da             
-da1<-da[order(coleta, decreasing=F),];da1 # Ordering
 ```
 
 ```{r}
-plot(da1$coleta, da1$res2,pch=19,type = "o", col=2, xaxt="n",yaxt="n",
- xlab="Order of collected data", ylab="Res.")
-axis(1, at = seq(0, 20, by = 1))
-axis(2, at = seq(-1, 1, by = 0.1))
-abline(h=0, col="blue" )
+da <- data.frame(data_tr$coleta,res2)          
+da1 <- da[order(data_tr$coleta, decreasing=F),]
+```
 
-summary(res2)
-abline(h=seq(-0.6,0.8,0.1),v=seq(1,20,1),lty=3,col="gray")
+```{r fig.height=6, fig.width=10}
+plot(da1$res2,
+     type = "b",
+     pch = 20,
+     col = "blue",
+     xlab = "Observation Order",
+     ylab = "Residuals",
+     main = "Residuals in Order of Collection")
+abline(h = 0, col = "red", lty = 2)
 ```
 
 ```{r}
-fit3<- aov(n_est_transf~trat)
+fit3 <- aov(data_tr$n_est_transf ~ data_tr$trat)
 summary(fit3)
 ```
 
-```{r}
+```{r warning=FALSE}
 require(ExpDes.pt)
-fit4<- dic(dados_tr$trat, dados_tr$n_est_trans, quali = TRUE, mcomp = "snk", sigT = 0.05, sigF = 0.05)
+
+fit4 <- dic(data_tr$trat, data_tr$n_est_trans, 
+            quali = TRUE, mcomp = "snk", sigT = 0.05, sigF = 0.05)
 ```

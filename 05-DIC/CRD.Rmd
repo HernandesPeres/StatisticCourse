@@ -107,14 +107,15 @@ levene.test(residuals, data$variety)
 
 It\`s looks difficult to conclude something right?
 ```{r fig.height=5, fig.width=10}
-# install.packages("car")
-library(car)
 
-qqPlot(residuals, 
-       main = "Q-Q Plot with Confidence Envelope",
-       col = "blue",
-       pch = 20,
-       envelope = 0.95)  # 95% confidence envelope
+plot(residuals,
+     type = "b",
+     pch = 20,
+     col = "blue",
+     xlab = "Observation Order",
+     ylab = "Residuals",
+     main = "Residuals in Order of Collection")
+abline(h = 0, col = "red", lty = 2)
 ```
 
 ### 6. Multiple Comparisons
