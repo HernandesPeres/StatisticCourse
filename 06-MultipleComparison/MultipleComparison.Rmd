@@ -5,320 +5,158 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-```{r}
-ls()
-remove(list=ls(all=TRUE))
-ls()
-```
-
-Packages required
-
-```{r}
-install.packages("nortest")
-install.packages("outliers")
-install.packages("ExpDes.pt")
-install.packages("agricolae")
-install.packages("SuppDists")
-install.packages(c("multcomp","DescTools"))
-install.packages("gmodels")
-install.packages("laercio")
-```
-
 Loading data
-
 ```{r}
-dados=read.table("DataMilho.txt",head=TRUE)
-str(dados)
+data <- read.table("DataMilho.txt",head=TRUE)
+knitr::kable(data)
 ```
 
 
 ```{r}
-dados$trat<-factor(dados$trat)
-str(dados)
-dados
-attach(dados)
+data$trat<-factor(data$trat)
 
-n <- length(dados$prod)
-cat("\n n =", n, "\n")
+n <- length(data$prod)
 ```
 
-Residuo calculation
-
+Residue calculation
 ```{r}
-fit1 <- aov(prod~trat)
+fit1 <- aov(data$prod ~ data$trat)
 anova(fit1)
-names(fit1)
+
 fit1$fitted.values
 residuos <- data.frame(fit1$residuals)
-res<-residuos[,1]; res
+res <- residuos[,1]
 ```
-
-Chart res analysis
-
-```{r}
-par(mfrow=c(2,2))
-plot(fit1)
-layout(1)
-```
-
 Residual estimatives
-
 ```{r}
 xb <- mean(res) 
 sx <- sd(res)
-cat("\n Média amostral =", xb, "\n Desvio padrão amostral =", sx, "\n")
-```
-
-Error normality - QQ chart
-
-```{r}
-qqn <- qqnorm(res,col="blue", cex=1, main = "", xlab = "Quantis teóricos N(0,1)", pch = 20,
-ylab = "Quantis amostrais")
-qqline(res, lty = 2, col = "red", lwd=2)
-```
-
-QQ chart with envelope
-
-```{r}
-nsim <- 500  # Number of simulations
-conf <- 0.95 # Reability coenf.
-
-dadossim <- matrix(rnorm(n * nsim, mean = xb, sd = sx), nrow = n)
-dadossim <- apply(dadossim, 2, sort)
-
-infsup <- apply(dadossim, 1, quantile, probs = c((1 - conf) / 2,
-(1 + conf) / 2))
-xbsim <- rowMeans(dadossim); xbsim
-```
-
-```{r}
-faixay <- range(res, dadossim)
-qq0  <- qqnorm(res,col="blue", cex=1, main = "", xlab = "Quantis teóricos N(0,1)", pch = 20,
-ylab = "Quantis dos Valores da Amostra", ylim = faixay)
-eixox <- sort(qq0$x)
-lines(eixox, xbsim,lty = 2, col = "red",lwd=2)
-lines(eixox, infsup[1,])
-lines(eixox, infsup[2,])
-```
-
-Or then
-
-```{r}
-require(fBasics)
-qqnormPlot(res)
 ```
 
 Normality test
+```{r warning=FALSE}
+library(car)
 
-```{r}
+qqPlot(res, 
+       main = "Q-Q Plot with Confidence Envelope",
+       col = "blue",
+       pch = 20,
+       envelope = 0.95)  # 95% confidence envelope
+```
+
+```{r warning=FALSE}
 library(nortest)
-t1 <- ks.test(res, "pnorm", xb, sx);t1 # Kolmogorov Smirnov
-t2 <- lillie.test(res);t2              # Lilliefors
-t3 <- cvm.test(res);t3                 # Cramér-von Mises
-t4 <- shapiro.test(res);t4             # Shapiro-Wilk
-t5 <- sf.test(res);t5                  # Shapiro-Francia
-t6 <- ad.test(res);t6                  # Anderson-Darling
+t1 <- ks.test(res, "pnorm", xb, sx)
+t2 <- lillie.test(res)             
+t3 <- cvm.test(res)                
+t4 <- shapiro.test(res)           
+t5 <- sf.test(res)                
+t6 <- ad.test(res)                
 ```
 
 Table of results
-
 ```{r}
-testes <- c(t1$method, t2$method, t3$method, t4$method, t5$method,
-t6$method)
-estt <- as.numeric(c(t1$statistic, t2$statistic, t3$statistic,
-t4$statistic, t5$statistic, t6$statistic))
-valorp <- c(t1$p.value, t2$p.value, t3$p.value, t4$p.value, t5$p.value,
-t6$p.value)
-resultados <- cbind(estt, valorp)
-rownames(resultados) <- testes
-colnames(resultados) <- c("Estatística", "p-value")
-print(resultados, digits = 4)
+tests <- c(t1$method, t2$method, t3$method, 
+            t4$method, t5$method, t6$method)
+
+st <- as.numeric(c(t1$statistic, t2$statistic, t3$statistic,
+                     t4$statistic, t5$statistic, t6$statistic))
+
+pv <- c(t1$p.value, t2$p.value, t3$p.value, 
+            t4$p.value, t5$p.value, t6$p.value)
+
+results <- data.frame(Test = tests, Statistics = st, pvalue = pv)
+knitr::kable(results)
 ```
 
-Checking the homoscedasticity of the errors.
-
+Homoscedasticity test
 ```{r}
-plot(fitted(fit1),pch=19, col=4, resid(fit1),xlab="Valores ajustados (médias trat)", ylab="Resíduos")
-```
+boxplot(res ~ data$trat, 
+        col="gray", ylab="Residuals", xlab="Varieties")
 
-residuals vs treatment
+mean.res <-tapply(res, data$trat, mean)         # Mean for each treat
+sd.res <- tapply(res, data$trat, sd)
 
-```{r}
-require(lattice)
-dotplot(res~trat, pch=19, col=2,ylab="Resíduos",xlab="Tratamentos")
-```
-
-Box-plot residuals vs treatment
-
-```{r}
-boxplot(res~trat, col=c(2,3,4,5), ylab="Resíduos", xlab="Tratamentos" )
-```
-
-With the function "points()" we can set the average over the boxplot
-
-```{r}
-mean.res <-tapply(res, trat, mean)         # Mean for each treat
 points(mean.res, pch=20, col=1, cex=1.5)
+points(mean.res+sd.res, pch="*", cex=1.5)
+points(mean.res-sd.res, pch="*", cex=1.5)
 ```
-
-In the same way, we can set the standard deviation
+With the function `points()` we can set the average over the boxplot
 
 ```{r}
-sd.res <-tapply(res, trat, sd)
-points(mean.res+sd.res, pch="*", col=3, cex=2.5)
-points(mean.res-sd.res, pch="*", col=3, cex=2.5)
+bartlett.test(res, data$trat)
 ```
 
+Checking the independence
+
 ```{r}
-#4- Gráfico da variavel resposta vs tratamentos (SOMENTE NO DIC)
-dotplot(prod~trat, pch=19, col=2,ylab="Produtividade",xlab="Tratamentos")
+plot(res,
+     type = "b",
+     pch = 20,
+     col = "blue",
+     xlab = "Observation Order",
+     ylab = "Residuals",
+     main = "Residuals in Order of Collection")
+abline(h = 0, col = "red", lty = 2)
 ```
 
-Checking the homoscedasticity of the erros
-
-### F de hartley
-
-Only use when rep is equal for all treats
+### 1. Multiple comparisons
 
 ```{r}
-require(SuppDists)
-gl = 4
-rep = 5
-var.res<- tapply(res ,trat,var); var.res
-Fmax<-max(var.res)/min(var.res); Fmax
-pvalue<-pmaxFratio(Fmax, gl, rep-1, lower.tail=FALSE, log.p=FALSE)
-pvalue
-
-detach(package:SuppDists, unload=TRUE) # Descareegar o pacote da memoria
-```
-
-Cochran test
-
-```{r}
-require(outliers)
-d<-data.frame(res, trat);d
-h2 <- cochran.test(res~trat, d, inlying=F)
-```
-
-Bartlett test
-
-can be used for unbalanced data
-
-```{r}
-h3 <- bartlett.test(res, trat)
-h3
-```
-
-results table
-
-```{r}
-homo = c(F-máximo de Hartley, h2$method, h3$method); homo
-estt2 = as.numeric(c(Fmax, h2$statistic, h3$statistic)); estt2
-pvalor2 = c(pvalue, h2$p.value, h3$p.value); pvalor2
-awns = cbind(estt2, pvalor2)
-rownames(awns) = homo 
-colnames(awns) = c("Estatística", "p-value")
-print(awns, digits = 4)
-```
-
-Checking the independence of the erros
-
-```{r}
-plot(fitted(fit1), resid(fit1),pch=19, col=4,xlab="Valores ajustados (médias trat)", ylab="Resíduos")
-
-da<-data.frame(coleta,res);da             
-da1<-da[order(coleta, decreasing=F),];da1 
-
-plot(da1$coleta, da1$res,pch=19,type = "o", col=2, xaxt="n",yaxt="n",
- xlab="Ordem de coleta dos dados", ylab="Resíduos")
-axis(1, at = seq(0, 20, by = 1))
-axis(2, at = seq(-4, 4, by = 1))
-abline(h=0, col="blue" )
-#Incluir linhas de grade
-summary(res)
-abline(h=seq(-4,4,0.5),v=seq(1,20,1),lty=3,col="gray")
-```
-
-## Multiple comparisons
-
-```{r}
-fit2 <- aov(prod~trat)
+fit2 <- aov(data$prod~data$trat)
 anova(fit2)
 ```
+Once we have run the ANOVA and found a significant effect, we can proceed with multiple comparison tests.
 
-Utilized for calculated CV
+The following tests can be applied after a significant ANOVA result:
 
-```{r}
-require(agricolae) 
-cv.model(fit2) 
-```
+-  **Tukey test**
+-  **Duncan test** 
+-  **SNK test** 
+-  **LSD test**
+-  **LSDB test** 
+-  **SK**
 
-or then
-
-mcomp can be: tukey, duncan, snk, lsd,lsdb, sk
-
-```{r}
+```{r warning=FALSE}
 require(ExpDes.pt)
-fit3<- dic(trat, prod, quali = TRUE, mcomp = "tukey", sigT = 0.05, sigF = 0.05)
+fit3<- dic(data$trat, data$prod, quali = TRUE, 
+           mcomp = "tukey", sigT = 0.05, sigF = 0.05)
 ```
 
-```{r}
-require(agricolae)
-```
+### 2. Orthogonal Contrasts
 
-Tukey test
-
-```{r}
-HSD.test(fit2, "trat",alpha=0.05, group=TRUE, console=TRUE)
-HSD.test(fit2, "trat",group=FALSE, console=TRUE)
-```
-
-Duncan test
-
-```{r}
-duncan.test(fit2, "trat",alpha=0.05, group=TRUE, console=TRUE)
-duncan.test(fit2, "trat",group=FALSE, console=TRUE)
-```
-
-## Teste t para grupos de contrastes Ortogonais
-
-### C1= 3mA-mB-mC-mD
-
-### C2= mB+mC-2mD
-
-### C3= mB-mC
-
-```{r}
+```{r warning=FALSE}
 require(gmodels)
 ```
 
-C1
+Some multiple comparisons can be performed using orthogonal contrasts. Below, we present three examples of such contrasts, which allow us to test specific and independent hypotheses about the treatment means.
 
+C1 = 3mA-mB-mC-mD
 ```{r}
-fit.contrast(fit2,trat, c( 3, -1, -1,  -1))
+fit.contrast(fit2, data$trat, c(3, -1, -1,  -1))
 ```
 
-C2
-
+C2 = mB+mC-2mD
 ```{r}
-fit.contrast(fit2,trat, c( 0, 1, 1,  -2))
+fit.contrast(fit2, data$trat, c(0, 1, 1,  -2))
 ```
 
-C3
-
+C3 = mB-mC
 ```{r}
-fit.contrast(fit2,trat, c( 0, 1, -1,  0))
+fit.contrast(fit2, data$trat, c(0, 1, -1,  0))
 ```
 
-Schffe test
-
-```{r}
+### 3. Scheffe test
+```{r warning=FALSE}
 require(DescTools)
 ```
+Scheffe's method applies to the set of estimates of all possible contrasts among the factor level means, not just the pairwise differences considered by Tukey's method.
 
 ```{r}
-sch2<-ScheffeTest(fit2, contrasts= matrix( c(3,-1,-1,-1,
+sch2<-ScheffeTest(fit2, contrasts= matrix(c(3,-1,-1,-1,
                                              0, 1, 1,-2,
-                                             0, 1,-1,0), ncol=3));sch2
+                                             0, 1,-1,0), 
+                                          ncol=3));
+
 plot(sch2)
 ```
