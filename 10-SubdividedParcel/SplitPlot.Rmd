@@ -1,170 +1,133 @@
 ---
-title: "Split-Plot experiment in completely randomized Design"
+title: "Split-Plot experiment"
 author: "Hernandes Peres"
 date: "`r Sys.Date()`"
 output: html_document
 ---
 
-# Introduction - Non sig
+# Split-plot experiment
 
-This analysis is based on a split-plot experiment conducted under a Completely Randomized Design (CRD).  
+## Example 1: Non-significant Interaction (CRD)
+
+This analysis is based on a split-plot experiment conducted under a Completely Randomized Design (CRD). 
+
 The objective was to evaluate the *brix* (sugar content) of mangoes according to variety and the position of the fruits relative to the cardinal points (North, South, East, West).
 
 The researcher collected 4 fruits (one from each cardinal direction) from each of the 3 replicates for each of the 5 mango varieties.  
-Using a 5% significance level, we will perform:
-
-- An Analysis of Variance (ANOVA)  
-- Duncan's multiple range test (when applicable)
-
-# Cleaning the Environment
 
 ```{r}
 rm(list = ls())
-```
 
-### Loading data
-```{r}
 data <- read.table("DataManga.txt", header = TRUE)
 
-# Converting relevant variables to factors
 data$trat <- as.factor(data$trat)
 data$var <- as.factor(data$var)
 data$pcard <- as.factor(data$pcard)
 data$rep <- as.factor(data$rep)
 
-# Checking the structure of the dataset
-str(data)
-
-# Attaching the dataset to the R search path
-attach(data)
-
-# Display the dataset
-data
-
-# Display the number of observations
 n <- length(data$brix)
-cat("\n n =", n, "\n")
+
+knitr::kable(data)
 ```
 
-### Assumption checks
-Before performing the full analysis, we check the assumptions of
-normality and homogeneity of variances
+### 1.1 Assumption checks
 ```{r}
-# Basic model to evaluate residuals
-fit1 <- aov(brix ~ trat)
-
-# ANOVA table
+fit1 <- aov(data$brix ~ data$trat)
 anova(fit1)
-
-# Shapiro-Wilk test for normality of residuals
-shapiro.test(residuals(fit1))
-
-# Bartlett's test for homogeneity of variances
-bartlett.test(residuals(fit1) ~ trat)
 ```
 
-### Split-Plot anova
+Shapiro-Wilk test for normality of residuals
+```{r}
+shapiro.test(residuals(fit1))
+```
+
+Bartlett's test for homogeneity of variances
+```{r}
+bartlett.test(residuals(fit1) ~ data$trat)
+```
+
+### 1.2 Analysis of variance
+
 In this split-plot design:
 
--The main plot factor is the variety
--The subplot factor is the cardinal position
-We use the ExpDes.pt package for analysis.
-```{r}
-# Load the package
+-   The main plot factor is the variety
+-   The subplot factor is the cardinal position
+
+We use the `ExpDes.pt` package for analysis.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 require(ExpDes.pt)
 
-# Split-plot analysis in CRD
-fit2 <- psub2.dic(var, pcard, rep, brix,
+fit2 <- psub2.dic(data$var, data$pcard, 
+                  data$rep, data$brix,
                   quali = c(TRUE, TRUE),
                   mcomp = "duncan",
-                  fac.names = c("Variety", "Cardinal Point"),
+                  fac.names = c("Variety", 
+                                "Cardinal Point"),
                   sigT = 0.05, sigF = 0.05)
-
 ```
 
-### Alternativa: Manual ANOVA with aov()
+### 1.3 Alternativa: Manual ANOVA with aov()
 ```{r}
-# ANOVA model with interaction and proper error structure
-fit3 <- aov(brix ~ var * pcard + Error(rep:var))
-
-# Display summary
+fit3 <- aov(data$brix ~ data$var * data$pcard + Error(data$rep:data$var))
 summary(fit3)
 ```
 
-## Example 2 - Sig
-```{r}
-remove(list = ls())
-```
-
-### Introduction
+## Example 2: Significant Interaction (RCBD)
 
 In this experiment using a split-plot scheme within a **Randomized Complete Block Design (RCBD)** with 4 blocks, the goal was to compare:
 
-- **4 Oat Varieties**: A1, A2, A3, A4  
-- **4 Seed Treatments**: B1, B2, B3 (chemical products), and B4 (untreated control)  
+-   **4 Oat Varieties**: A1, A2, A3, A4  
+-   **4 Seed Treatments**: B1, B2, B3, and B4 (untreated control)  
 
 The response variable is **oat production**.
 
-### Loading data
-```{r}
+```{r message=FALSE, warning=FALSE}
+remove(list = ls())
 data <- read.table("DataTratSementes.txt", header = TRUE)
 
-# Converting variables to factors
 data$trat <- as.factor(data$trat)
 data$var <- as.factor(data$var)
 data$sem <- as.factor(data$sem)
 data$bloco <- as.factor(data$bloco)
 
-# Checking structure of the dataset
-str(data)
-
-# Attach data to the search path
-attach(data)
-
-# Show the dataset
-data
-
-# Number of observations
 n <- length(data$prod)
-cat("\n n =", n, "\n")
+knitr::kable(data)
 ```
 
-### Assumptions checks
+### 2.1 Assumptions checks
+
 We perform initial ANOVA on the treatments and blocks to extract residual and test for normality
 ```{r}
-# Initial ANOVA model
-fit1 <- aov(prod ~ trat + bloco)
+fit1 <- aov(data$prod ~ data$trat + data$bloco)
 anova(fit1)
-
-# Residuals
-res <- residuals(fit1)
-res
-
-# Residual statistics
-xb <- mean(res)
-sx <- sd(res)
-cat("\n Sample mean =", xb, "\n Sample standard deviation =", sx, "\n")
-
-# Kolmogorov-Smirnov normality test
-ks.test(res, "pnorm", xb, sx)
 ```
 
-### Split-Plot ANOVA in RCBD
+Shapiro-Wilk test for normality of residuals
+```{r}
+shapiro.test(residuals(fit1))
+```
+
+Bartlett's test for homogeneity of variances
+```{r}
+bartlett.test(residuals(fit1) ~ data$trat)
+```
+
+### 2.2 Analysis of variance
 In this split-plot design:
 
 -Main plot factor: Variety (var)
 -Subplot factor: Seed Treatment (sem)
-We use the ExpDes.pt package for performing the correct statistical analysis.
+We use the `ExpDes.pt` package for performing the correct statistical analysis.
 
-```{r}
-# Load required package
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 require(ExpDes.pt)
 
-# Split-plot analysis using RCBD
-fit2 <- psub2.dbc(var, sem, bloco, prod,
+fit2 <- psub2.dbc(data$var, data$sem, data$bloco, data$prod,
                   quali = c(TRUE, TRUE),
                   mcomp = "tukey",
-                  fac.names = c("Varieties", "Seed Treatments"),
+                  fac.names = c("Varieties", 
+                                "Seed Treatments"),
                   sigT = 0.05, sigF = 0.05)
 ```
 

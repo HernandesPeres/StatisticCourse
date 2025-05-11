@@ -4,97 +4,83 @@ author: "Hernandes Peres"
 date: "`r Sys.Date()`"
 output: html_document
 ---
-# 1
-```{r}
-# Clear environment
-rm(list = ls())
-ls()
+# Correlation
 
-# Load dataset
-data <- read.table("3EST220-DataTemperatura.txt", header = TRUE)
-str(data)
-head(data)
-attach(data)
+## Example 1:
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(dplyr)
+rm(list = ls())
+data <- read.table("DataTemperatura.txt", header = TRUE)
 ```
 
 Descriptive statistics
-
 ```{r}
-# Variances
-var(y1)
-var(y2)
+var(data$y1)
+var(data$y2)
 
-# Covariance
-cov(y1, y2)
+cov(data$y1, data$y2)
 
-# Remove first column if it's not a response variable
 data_clean <- data[, -1]
-data_clean
+knitr::kable(data_clean)
 ```
 
-Correlation analysis
-
+Pearson correlation matrix
 ```{r}
-# Pearson correlation matrix
-cor(data_clean, method = "pearson")
-
-# Hypothesis test for correlation
-cor.test(y1, y2, method = "pearson", alternative = "two.sided")
+knitr::kable(cor(data_clean, method = "pearson"))
 ```
 
-**Interpretation:** -H0 (null hypothesis): ρ = 0 (no correlation) -H1 (alternative hypothesis): ρ ≠ 0 -The *p-value* indicates whether the correlation is statistically significant.
+Hypothesis test for correlation
+```{r}
+cor.test(data$y1, data$y2, 
+         method = "pearson", 
+         alternative = "two.sided")
+```
+
+**Interpretation:** 
+-$H0$ (null hypothesis): ρ = 0 (no correlation) 
+-$H1$ (alternative hypothesis): ρ ≠ 0 -The *p-value* indicates whether the correlation is statistically significant.
 
 Scatterplot
 ```{r}
-# Plotting the relationship
-plot(y1, y2, pch = 19, col = "blue",
+plot(data$y1, data$y2, pch = 19, col = "blue",
      xlab = "y1", ylab = "y2", main = "Scatterplot of y1 vs y2")
 ```
 
-# 2
+## Example 2:
 ```{r}
-# Clear all objects
 rm(list = ls())
-ls()
 
-# Load dataset
-data <- read.table("5EST220-DataPesoAlt.txt", header = TRUE)
-str(data)
-head(data)
-attach(data)
+data <- read.table("DataPesoAlt.txt", header = TRUE)
+
+knitr::kable(data)
 ```
 
-Descriptive statistics
+### 2.1 Descriptive statistics
 ```{r}
-# Variance of each variable
-var(peso)    # Variance of weight
-var(altura)  # Variance of height
+cov(data$peso, data$altura)
 
-# Covariance between height and weight
-cov(peso, altura)
-
-# Remove the first column if it's not a response variable
 data_clean <- data[, -1]
-data_clean
 ```
 
-Pearson correlation
+Pearson correlation matrix
 ```{r}
-# Pearson correlation matrix
-cor(data_clean, method = "pearson")
+knitr::kable(cor(data_clean, method = "pearson"))
+```
 
-# Hypothesis test for Pearson correlation
-cor.test(peso, altura, method = "pearson", alternative = "two.sided")
+Hypothesis test for Pearson correlation
+```{r}
+cor.test(data$peso, data$altura, 
+         method = "pearson", alternative = "two.sided")
 ```
 
 **Hypothesis Interpretation:**
-H₀ (null hypothesis): ρ = 0 (no linear correlation)
-H₁ (alternative hypothesis): ρ ≠ 0 (there is linear correlation)
+-   H₀ (null hypothesis): ρ = 0 (no linear correlation)
+-   H₁ (alternative hypothesis): ρ ≠ 0 (there is linear correlation)
+
 The *p-value* will determine whether the correlation is statistically significant.
 
 ```{r}
-# Scatterplot of Height vs Weight
-plot(altura, peso,
+plot(data$altura, data$peso,
      pch = 19,
      col = "blue",
      xlab = "Height (cm)",
@@ -102,62 +88,72 @@ plot(altura, peso,
      main = "Scatterplot: Height vs Weight")
 ```
 
-# 3
+## Example 3:
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+remove(list = ls())
 
-```{r}
-# Load data
-data <- read.table("7EST220-DataFeijao.txt", header = TRUE)
+require(ExpDes.pt)
 
-# Convert genotypes and blocks to factors
+data <- read.table("DataFeijao.txt", header = TRUE)
+
 data$gen <- factor(data$gen)
 data$bloco <- factor(data$bloco)
-
-str(data)
-head(data)
-
-attach(data)
 ```
 
 ANOVA for all response Variables
+
 ```{r}
-# Load ExpDes.pt package
-require(ExpDes.pt)
+col_start <- 3 # Column index where response variables start
 
-# Column index where response variables start
-col_start <- 3
-
-# Perform ANOVA with Scott-Knott for each response variable
 for(i in col_start:ncol(data)) {
   cat("\n", "Response Variable:", names(data)[i], "\n")
-  dbc(gen, bloco, data[, i], quali = TRUE, mcomp = "sk", sigT = 0.05, sigF = 0.05)
-}
+  knitr::kable(dbc(data$gen, data$bloco, data[, i], quali = TRUE, mcomp = "sk", sigT = 0.05, sigF = 0.05))}
 ```
 
-Correlation between two response variables
+Correlation between productivity and 100-seed weight
 ```{r}
-# Correlation between productivity and 100-seed weight
-cor(prod, pcs)
+cor(data$prod, data$pcs)
 
-# Pearson correlation test
-cor.test(prod, pcs, method = "pearson", alternative = "two.sided", conf.level = 0.95)
-
+cor.test(data$prod, data$pcs, 
+         method = "pearson", 
+         alternative = "two.sided", conf.level = 0.95)
 ```
 
 Correlation matrix for all response variables
 ```{r}
-# Remove genotype and block columns
-responses <- data[, -c(1, 2)]
-head(responses)
+responses <- data[, -c(1, 2)] # Remove genotype and block columns
+knitr::kable(responses)
+```
 
-# Correlation matrix
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(ggplot2)
+library(reshape2)
 r <- cor(responses)
-r
+knitr::kable(r)
+
+r <- melt(r)
+
+r %>% ggplot(aes(x = Var1, y = Var2, fill = value))+
+  geom_tile()+
+  geom_text(aes(label = round(value,2)), size = 4, 
+            fontface = "bold")+
+  scale_fill_gradient2(low = "#d7191c",
+                      mid = "#ffffbf",
+                      high = "#1a9641",
+                      midpoint = 0)+
+  theme_minimal()+
+  theme(axis.text.x = element_text(size = 10, face = "bold", hjust = 0.5),
+        axis.text.y = element_text(size = 10, face = "bold", 
+                                   hjust = 0.5, angle = 90),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(), 
+        legend.position = "none")
 ```
 
 p-values for Pearson Correlation Tests
-
 ```{r}
-# Matrix of p-values for correlation significance
 pvalue <- matrix(0, ncol(responses), ncol(responses))
 colnames(pvalue) <- rownames(pvalue) <- colnames(responses)
 
@@ -167,15 +163,26 @@ for(i in 1:ncol(responses)) {
   }
 }
 
-pvalue
+knitr::kable(pvalue)
+
+pvalue <- melt(pvalue)
 ```
-
-Correlation Between 'flor' and Other Variables
-
 ```{r}
-# Correlation of 'flor' with all other variables
-x <- responses[[1]]  # 'flor'
-lapply(responses[-1], cor.test, x = x, method = "pearson")
-
+pvalue %>% ggplot(aes(x = Var1, y = Var2, fill = value))+
+  geom_tile()+
+  geom_text(aes(label = round(value,2)), size = 4, 
+            fontface = "bold")+
+  scale_fill_gradient2(low = "#d7191c",
+                      mid = "#ffffbf",
+                      high = "#1a9641",
+                      midpoint = 0.5)+
+  theme_minimal()+
+  theme(axis.text.x = element_text(size = 10, face = "bold", hjust = 0.5),
+        axis.text.y = element_text(size = 10, face = "bold", 
+                                   hjust = 0.5, angle = 90),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(), 
+        legend.position = "none")
 ```
 

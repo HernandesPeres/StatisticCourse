@@ -4,188 +4,192 @@ author: "Hernandes Peres"
 date: "`r Sys.Date()`"
 output: html_document
 ---
-## Load Required Packages
 
-```{r}
-library(nortest)
-library(SuppDists)
-library(outliers)
-library(agricolae)
-library(ExpDes.pt)
-```
+## Example 1
 
-## Load Data and Prepare Variables
 ```{r}
 rm(list = ls())
-dados <- read.table("DataRBD.txt", header = TRUE)
-dados$trat <- factor(dados$trat)
-dados$bloco <- factor(dados$bloco)
-attach(dados)
+data <- read.table("DataRBD.txt", header = TRUE)
+data$trat <- as.factor(data$trat)
+data$bloco <- as.factor(data$bloco)
+
 n <- length(prod)
 ```
 
-## Basic Descriptive Statistics
-```{r}
-mean.prodt <- tapply(prod, trat, mean)
-var.prodt <- tapply(prod, trat, var)
-mean.prodb <- tapply(prod, bloco, mean)
-var.prodb <- tapply(prod, bloco, var)
+### 1.1 Field layout
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+source("C:/StatisticsCourse/05-DIC/ExperimentalDesignFunction.R")
+
+set.seed(7)
+field_layout(data = data,
+             n_row = nrow(data)/length(levels(data$bloco)),
+             n_col = length(levels(data$bloco)),  
+             design = "DBC")$plot
 ```
 
-## ANOVA and Residuals
+### 1.2 Basic Descriptive Statistics
+
 ```{r}
-fit1 <- aov(prod ~ bloco + trat)
+colnames(data)[colnames(data) == "rep"] <- "bloco"
+
+mean.prodt <- tapply(data$prod, data$trat, mean)
+var.prodt <- tapply(data$prod, data$trat, var)
+mean.prodb <- tapply(data$prod, data$bloco, mean)
+var.prodb <- tapply(data$prod, data$bloco, var)
+```
+
+### 1.3 ANOVA and Residuals
+
+```{r}
+fit1 <- aov(data$prod ~ data$bloco + data$trat)
 res <- residuals(fit1)
-CV <- (sqrt(mean(anova(fit1)[["Mean Sq"]][3])) / mean(prod)) * 100
 ```
 
-## Residual Diagnostics - Normality
-```{r}
+Residual Diagnostics
+
+**3.1. Checking residuals normality**
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 xb <- mean(res)
 sx <- sd(res)
 
-# QQ Plot
-qqnorm(res, col = "blue", pch = 20)
-qqline(res, col = "red", lwd = 2, lty = 2)
+library(car)
 
-# QQ Envelope
-nsim <- 500
-conf <- 0.95
-dadossim <- matrix(rnorm(n * nsim, mean = xb, sd = sx), nrow = n)
-dadossim <- apply(dadossim, 2, sort)
-infsup <- apply(dadossim, 1, quantile, probs = c((1 - conf)/2, (1 + conf)/2))
-xbsim <- rowMeans(dadossim)
-faixay <- range(res, dadossim)
-qq0 <- qqnorm(res, col = "blue", pch = 20, ylim = faixay)
-eixox <- sort(qq0$x)
-lines(eixox, xbsim, lty = 2, col = "red", lwd = 2)
-lines(eixox, infsup[1, ])
-lines(eixox, infsup[2, ])
+qqPlot(res, 
+       main = "Q-Q Plot with Confidence Envelope",
+       col = "blue",
+       pch = 20,
+       envelope = 0.95)  # 95% confidence envelope
 ```
 
-Normality Tests
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=TRUE}
+library(nortest)
 tests <- list(
   ks.test(res, "pnorm", xb, sx),
   lillie.test(res),
   cvm.test(res),
   shapiro.test(res),
   sf.test(res),
-  ad.test(res)
-)
+  ad.test(res))
 
-results <- data.frame(
-  Statistic = sapply(tests, function(x) x$statistic),
-  p_value = sapply(tests, function(x) x$p.value),
-  row.names = sapply(tests, function(x) x$method)
-)
-print(results, digits = 4)
+results <- data.frame(Statistic = sapply(tests, function(x) x$statistic),
+                      p_value = sapply(tests, function(x) x$p.value),
+                      row.names = sapply(tests, function(x) x$method))
+
+knitr::kable(results)
 ```
 
-## Residual Diagnostics - Homoscedasticity
+**3.2. Checking residual Homoscedasticity**
 
 ```{r}
-plot(fitted(fit1), res, pch = 19, col = 4, xlab = "Fitted Values", ylab = "Residuals")
-plot(trat, res, pch = 19, col = 4, xlab = "Treatments", ylab = "Residuals")
-boxplot(res ~ trat, col = 2:6, xlab = "Treatments", ylab = "Residuals")
-points(tapply(res, trat, mean), pch = 20, col = 1, cex = 1.5)
-points(tapply(res, trat, mean) + tapply(res, trat, sd), pch = "*", col = 3)
-points(tapply(res, trat, mean) - tapply(res, trat, sd), pch = "*", col = 3)
+bartlett.test(res, data$trat)
 ```
 
-Homogeneity Tests
-```{r}
-var.res <- tapply(res, trat, var)
-Fmax <- max(var.res) / min(var.res)
-p.value.Fmax <- pmaxFratio(Fmax, 2, 5, lower.tail = FALSE)
+**3.3. Checking residuals independence**
 
-cochran.test(res ~ trat, data.frame(res, trat), inlying = FALSE)
-bartlett.test(res, trat)
+```{r}
+plot(res,
+     type = "b",
+     pch = 20,
+     col = "blue",
+     xlab = "Observation Order",
+     ylab = "Residuals",
+     main = "Residuals in Order of Collection")
+abline(h = 0, col = "red", lty = 2)
 ```
 
-## Residual Diagnostics - Independence
+### 1.4 ANOVA Summary
 
-```{r}
-plot(fitted(fit1), res, pch = 19, col = 4, xlab = "Fitted Values", ylab = "Residuals")
+Utilizing the `ExpDes.pt` package we can run ANOVA for a Randomized Completed Blocks Design, using `dbc()` function.
 
-# Simulated order of data collection
-coleta <- 1:n
-plot(sort(coleta), res, type = "o", pch = 19, col = 2, xlab = "Collection Order", ylab = "Residuals")
-abline(h = 0, col = "blue")
-abline(h = seq(-3, 4, 1), v = seq(1, n, 1), lty = 3, col = "gray")
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(ExpDes.pt)
+fit3 <- dbc(data$trat, data$bloco, data$prod, quali = TRUE, 
+            mcomp = "duncan", sigT = 0.05, sigF = 0.05)
 ```
 
-## ANOVA Summary and Post-hoc Tests
+As we can se the F test from the ANOVA is not significant, then we should not follow with the multiple comparison
 
-```{r}
-fit2 <- aov(prod ~ bloco + trat)
-anova(fit2)
-duncan.test(fit2, "trat", group = TRUE, console = TRUE)
-```
+## Example 2
 
-Using ExpDes.pt
-```{r}
-fit3 <- dbc(trat, bloco, prod, quali = TRUE, mcomp = "lsd", sigT = 0.05, sigF = 0.05)
-```
+Cleaning environment and loading data
 
-## Exemple 3
-```{r}
+```{r message=FALSE, warning=FALSE}
 rm(list=ls())
-```
 
-```{r}
-# Load data
 data <- read.table("DataSoja.txt", header=TRUE)
 data$trat <- factor(data$trat)
 data$bloco <- factor(data$bloco)
-attach(data)
+
+knitr::kable(data)
 ```
 
-ANOVA models and residuals
+### 2.1 Field layout
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+source("C:/StatisticsCourse/05-DIC/ExperimentalDesignFunction.R")
+
+set.seed(7)
+field_layout(data = data,
+             n_row = nrow(data)/length(levels(data$bloco)),
+             n_col = length(levels(data$bloco)),  
+             design = "DBC")$plot
+```
+
+### 2.2 ANOVA and residuals
+
 ```{r}
-fit_list <- list(
-  altpvagem = aov(altpvagem ~ bloco + trat),
-  altplanta = aov(altplanta ~ bloco + trat),
-  estande = aov(estande ~ bloco + trat),
-  prod_ton = aov(prod_ton ~ bloco + trat)
-)
+fit_list <- list(altpvagem = aov(data$altpvagem ~ data$bloco + data$trat),
+                 altplanta = aov(data$altplanta ~ data$bloco + data$trat),
+                 estande = aov(data$estande ~ data$bloco + data$trat),
+                 prod_ton = aov(data$prod_ton ~ data$bloco + data$trat))
 
 residuals_list <- lapply(fit_list, residuals)
 lapply(fit_list, anova)
 ```
 
-Coefficient of Variation (CV)
-```{r}
+### 2.3 Coefficient of Variation (CV)
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(agricolae)
 lapply(fit_list, cv.model)
 ```
 
 Normality Test (Lilliefors)
-```{r}
+
+```{r message=FALSE, warning=FALSE}
 library(nortest)
 lillie_results <- lapply(residuals_list, lillie.test)
 
-# Summary table
 stats <- sapply(lillie_results, function(x) x$statistic)
 pvals <- sapply(lillie_results, function(x) x$p.value)
+
 normality_table <- data.frame(Statistic = stats, `p-value` = pvals)
-print(round(normality_table, 4))
+
+knitr::kable(normality_table)
 ```
 
-# Multivariate ANOVA (MANOVA)
+### 2.4 Multivariate ANOVA
+
 ```{r}
-manova_formula <- as.formula(paste0("cbind(", paste(names(data)[-c(1,2)], collapse=","), ") ~ trat + bloco"))
+manova_formula <- as.formula(paste0("cbind(", 
+                                    paste(names(data)[-c(1,2)],
+                                    collapse=","), ") ~ trat+bloco"))
+
 fit_manova <- aov(manova_formula, data=data)
+
 summary(fit_manova)
 ```
 
 Using ExpDes.pt for RCBD analysis
+
 ```{r}
 library(ExpDes.pt)
 for (i in 3:ncol(data)) {
   cat("\nVariable:", names(data)[i], "\n")
-  dbc(trat, bloco, data[,i], quali=TRUE, mcomp="sk", sigT=0.05, sigF=0.05)
-}
+  dbc(data$trat, 
+      data$bloco, 
+      data[,i], 
+      quali=TRUE, mcomp="sk", sigT=0.05, sigF=0.05)}
 ```
-
-Note: multiple comparison options include: "tukey", "duncan", "snk", "lsd", "sk"

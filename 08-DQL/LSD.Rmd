@@ -6,163 +6,95 @@ output: html_document
 ---
 
 # Latin Square Design
-A researcher designed an experiment to compare 5 types of bacilli
-(A, B, C, D, and E) used in yogurt production. However, the researcher
-found that the 25 available 1-liter milk samples were not homogeneous
-due to variations in fat content and acidity level. To control these two
-sources of variation, the bacilli were randomly assigned to the milk
-samples such that each bacillus was tested under all conditions.
 
-### Clearing all objects from memory
+A researcher designed an experiment to compare 5 types of bacilli (A, B, C, D, and E) used in yogurt production. However, the researcher found that the 25 available 1-liter milk samples were not homogeneous due to variations in fat content and acidity level. To control these two sources of variation, the bacilli were randomly assigned to the milk samples such that each bacillus was tested under all conditions.
+
 ```{r}
 rm(list=ls())
-ls()
-```
 
-### Loading data
-```{r}
 data <- read.table("DataIogurte.txt", header=TRUE)
-str(data)
+
 data$trat <- factor(data$trat)
 data$linha <- factor(data$linha)
 data$coluna <- factor(data$coluna)
-str(data)
-data
-attach(data)
 
-n <- length(volume)
-cat("\n n =", n, "\n")
+n <- length(data$volume)
+
+knitr::kable(data)
 ```
 
-### ANOVA and residuals
+### 1. ANOVA and residuals
 ```{r}
-fit1 <- aov(volume ~ linha + coluna + trat)
+fit1 <- aov(data$volume ~ data$linha + data$coluna + data$trat)
 print(anova(fit1), digits=7)
 res <- residuals(fit1)
 ```
 
-### Means and variances
+### 2. Means and variances
 ```{r}
 model.tables(fit1, "means")
-var.trat <- tapply(volume, trat, var)
-var.res <- tapply(res, trat, var)
+var.trat <- tapply(data$volume, data$trat, var)
+var.res <- tapply(res, data$trat, var)
 ```
 
-### Coefficient of Variation (CV)
-```{r}
-anova_table <- anova(fit1)
-CV <- (sqrt(anova_table$Mean[4]) / model.tables(fit1, "means")$tables$Gran) * 100
-print(CV, digits=3)
-```
-
-### Residual statistics
+### 3. Preposition residual verification
 ```{r}
 xb <- mean(res)
 sx <- sd(res)
-cat("\n Residual mean =", xb, "\n Residual SD =", sx, "\n")
 ```
 
-### Normality verification
-```{r}
-qqnorm(res, col="blue", cex=1, pch=20, main="", xlab="Theoretical Quantiles N(0,1)", ylab="Sample Quantiles")
-qqline(res, lty=2, col="red", lwd=2)
-```
+**3.1. Checking residuals normality distribution**
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(car)
 
-### QQ plot with envelope
-```{r}
-nsim <- 500
-conf <- 0.95
-data_sim <- matrix(rnorm(n * nsim, mean = xb, sd = sx), nrow = n)
-data_sim <- apply(data_sim, 2, sort)
-infsup <- apply(data_sim, 1, quantile, probs = c((1 - conf) / 2, (1 + conf) / 2))
-xbsim <- rowMeans(data_sim)
-y_range <- range(res, data_sim)
-qq0 <- qqnorm(res, col="blue", cex=1, main="", pch=20, ylim=y_range, xlab="Theoretical Quantiles N(0,1)", ylab="Sample Quantiles")
-x_axis <- sort(qq0$x)
-lines(x_axis, xbsim, lty=2, col="red", lwd=2)
-lines(x_axis, infsup[1,])
-lines(x_axis, infsup[2,])
+qqPlot(res, 
+       main = "Q-Q Plot with Confidence Envelope",
+       col = "blue",
+       pch = 20,
+       envelope = 0.95)  # 95% confidence envelope
 ```
-
-### Normality tests
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(nortest)
-tests <- list(
-  ks = ks.test(res, "pnorm", xb, sx),
-  lillie = lillie.test(res),
-  cvm = cvm.test(res),
-  shapiro = shapiro.test(res),
-  sf = sf.test(res),
-  ad = ad.test(res)
-)
+tests <- list(ks = ks.test(res, "pnorm", xb, sx),
+              lillie = lillie.test(res),
+              cvm = cvm.test(res),
+              shapiro = shapiro.test(res),
+              sf = sf.test(res),
+              ad = ad.test(res))
 
-results <- data.frame(
-  Statistic = sapply(tests, function(x) as.numeric(x$statistic)),
-  P_Value = sapply(tests, function(x) x$p.value),
-  row.names = sapply(tests, function(x) x$method)
-)
-print(results, digits=4)
+results <- data.frame(Statistic = sapply(tests, function(x) as.numeric(x$statistic)),
+                      P_Value = sapply(tests, function(x) x$p.value),
+                      row.names = sapply(tests, function(x) x$method))
+
+knitr::kable(results)
 ```
 
-### Homoscedasticity checks
+**3.2 Checking the residuals independence**
 ```{r}
-plot(fitted(fit1), resid(fit1), pch=19, col=4, xlab="Fitted Values", ylab="Residuals")
-plot.default(trat, res, pch=19, col=4, xlab="Treatments", ylab="Residuals")
-boxplot(res ~ trat, col=c(2,7,4,5,6), xlab="Treatments", ylab="Residuals")
-points(tapply(res, trat, mean), pch=20, col=1, cex=1.5)
-sd.res <- tapply(res, trat, sd)
-points(tapply(res, trat, mean) + sd.res, pch="-", col=3, cex=2.5)
-points(tapply(res, trat, mean) - sd.res, pch="-", col=3, cex=2.5)
+plot(res,
+     type = "b",
+     pch = 20,
+     col = "blue",
+     xlab = "Observation Order",
+     ylab = "Residuals",
+     main = "Residuals in Order of Collection")
+abline(h = 0, col = "red", lty = 2)
 ```
 
-### Hartley’s F-max test
+**3.3 Checking residuals homoscedasticity**
 ```{r}
-library(SuppDists)
-var_res <- tapply(res, trat, var)
-Fmax <- max(var_res) / min(var_res)
-p_value <- pmaxFratio(Fmax, 4, 5, lower.tail=FALSE, log.p=FALSE)
-cat("Fmax =", Fmax, ", p-value =", p_value, "\n")
+bartlett.test(res, data$trat)
 ```
 
-### Cochran’s test
+### 4. ANOVA for Latin Square
 ```{r}
-library(outliers)
-d <- data.frame(res, trat)
-cochran.test(res ~ trat, d, inlying=FALSE)
-```
-
-### Bartlett’s test
-```{r}
-bartlett.test(res, trat)
-```
-
-### Independence of errors
-```{r}
-da <- data.frame(coleta, res)
-da1 <- da[order(coleta), ]
-plot(da1$coleta, da1$res, pch=19, type="o", col=2, xaxt="n", yaxt="n", xlab="Order of Data Collection", ylab="Residuals")
-axis(1, at=seq(0, 25, 1))
-axis(2, at=seq(-80, 100, 20))
-abline(h=0, col="blue")
-abline(h=seq(-80,100,20), v=seq(0,25,1), lty=3, col="gray")
-```
-
-### ANOVA for Latin Square
-```{r}
-fit2 <- aov(volume ~ linha + coluna + trat)
+fit2 <- aov(data$volume ~ data$linha + data$coluna + data$trat)
 print(anova(fit2), digits=7)
 ```
 
-### Post-hoc tests
-```{r}
-library(agricolae)
-HSD.test(fit2, "trat", group=TRUE, console=TRUE)
-duncan.test(fit2, "trat", group=TRUE, console=TRUE)
-```
-
-### Using ExpDes.pt
-```{r}
+Using ExpDes.pt
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(ExpDes.pt)
-fit3 <- dql(trat, linha, coluna, volume, quali=TRUE, mcomp="tukey", sigT=0.05, sigF=0.05)
+fit3 <- dql(data$trat, data$linha, data$coluna, data$volume, 
+            quali=TRUE, mcomp="tukey", sigT=0.05, sigF=0.05)
 ```
-Options for mcomp: "tukey", "duncan", "snk", "lsd", "lsdb", "sk"
