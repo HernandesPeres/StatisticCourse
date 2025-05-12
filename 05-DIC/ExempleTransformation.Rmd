@@ -1,8 +1,104 @@
 ---
 title: "Data transformation"
-author: "Hernandes Peres"
-date: "`r Sys.Date()`"
-output: html_document
+author: 
+  - name: Undergrad Hernandes Peres
+    email: Hernandes.panichi@ufv.br
+    affiliation:
+      - name: Biometrics and Quantitative genetics Lab. 
+        url: https://idata.ufv.br/
+        city: Viçosa
+        region: Minas Gerais
+        country: Brazil
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: Sections
+    toc-location: left
+    number-sections: true
+    number-depth: 4
+    toc_float: true
+    theme: [zephyr, theme.scss]
+    embed-resources: true
+    self-contained: true
+    anchor-sections: true
+    smooth-scroll: true
+    link-external-newwindow: false
+    code-fold: false
+    code-overflow: wrap
+    code-block-border-left: "#781c1e"
+    code-copy: hover
+    code-summary: "Show/Hide Code"
+    lang: en
+    fig-format: png
+    fig-responsive: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    page-layout: article
+    title-block-banner-color: 'white'
+    highlight-style: github
+editor_options: 
+  chunk_output_type: console
+---
+
+<style>
+/* Cor de fundo do banner de título (título principal da página) */
+div.quarto-title-block.default .quarto-title-banner {
+  background-color: #a30202 !important;
+  text-align: center;
+  padding: 20px 0;
+  border: none;
+  box-shadow: none;
+}
+
+/* Cor e estilo do título principal (texto) */
+div.quarto-title-block.default .quarto-title-banner h1 {
+  color: white !important;
+  font-size: 2em;
+  margin: 0;
+}
+
+/* Logo fixa no cabeçalho */
+.logo-fixed-header {
+  position: fixed;
+  top: 0;
+  left: 20px;
+  z-index: 1000;
+  padding: 10px;
+}
+
+.logo-fixed-header img {
+  max-width: 120px;
+  height: auto;
+  opacity: 0.95;
+}
+
+/* Logo fixa no canto inferior direito */
+.logo-fixed-bottom {
+  position: fixed;
+  bottom: 20px;
+  right: -10px;
+  z-index: 1000;
+}
+
+.logo-fixed-bottom img {
+  max-width: 460px;
+  height: auto;
+  opacity: 0.95;
+}
+</style>
+
+
+<!-- HTML para o logo fixo no cabeçalho -->
+<div class="logo-fixed-header">
+  <img src="G:/My Drive/IC/logoUFV.png" alt="Logo fixo no cabeçalho">
+</div>
+
+<!-- HTML para o logo fixo no canto inferior direito -->
+<div class="logo-fixed-bottom">
+  <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
+</div>
+---
 ---
 
 Reading data
