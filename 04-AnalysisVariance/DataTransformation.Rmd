@@ -1,12 +1,109 @@
 ---
-title: "DataTransformation"
-author: "Hernandes Peres"
-date: "`r Sys.Date()`"
-output: html_document
+title: "Analysis of variance"
+author: 
+  - name: Undergrad Hernandes Peres
+    email: Hernandes.panichi@ufv.br
+    affiliation:
+      - name: Biometrics and Quantitative genetics Lab. 
+        url: https://idata.ufv.br/
+        city: Viçosa
+        region: Minas Gerais
+        country: Brazil
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: Sections
+    toc-location: left
+    number-sections: true
+    number-depth: 4
+    toc_float: true
+    theme: [zephyr, theme.scss]
+    embed-resources: true
+    self-contained: true
+    anchor-sections: true
+    smooth-scroll: true
+    link-external-newwindow: false
+    code-fold: false
+    code-overflow: wrap
+    code-block-border-left: "#781c1e"
+    code-copy: hover
+    code-summary: "Show/Hide Code"
+    lang: en
+    fig-format: png
+    fig-responsive: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    page-layout: article
+    title-block-banner-color: 'white'
+    highlight-style: github
+editor_options: 
+  chunk_output_type: console
+---
+
+<style>
+/* Cor de fundo do banner de título (título principal da página) */
+div.quarto-title-block.default .quarto-title-banner {
+  background-color: #a30202 !important;
+  text-align: center;
+  padding: 20px 0;
+  border: none;
+  box-shadow: none;
+}
+
+/* Cor e estilo do título principal (texto) */
+div.quarto-title-block.default .quarto-title-banner h1 {
+  color: white !important;
+  font-size: 2em;
+  margin: 0;
+}
+
+/* Logo fixa no cabeçalho */
+.logo-fixed-header {
+  position: fixed;
+  top: 0;
+  left: 20px;
+  z-index: 1000;
+  padding: 10px;
+}
+
+.logo-fixed-header img {
+  max-width: 120px;
+  height: auto;
+  opacity: 0.95;
+}
+
+/* Logo fixa no canto inferior direito */
+.logo-fixed-bottom {
+  position: fixed;
+  bottom: 20px;
+  right: -10px;
+  z-index: 1000;
+}
+
+.logo-fixed-bottom img {
+  max-width: 460px;
+  height: auto;
+  opacity: 0.95;
+}
+</style>
+
+
+<!-- HTML para o logo fixo no cabeçalho -->
+<div class="logo-fixed-header">
+  <img src="G:/My Drive/IC/logoUFV.png" alt="Logo fixo no cabeçalho">
+</div>
+
+<!-- HTML para o logo fixo no canto inferior direito -->
+<div class="logo-fixed-bottom">
+  <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
+</div>
 ---
 ## Square Root Transformation
 
 ```{r}
+library(tidyverse)
+
 birds <- c(22,28,37,34,13,24,39,5,33,32)
 mean_birds <- mean(birds)
 
@@ -40,13 +137,16 @@ x_O <- sin((xt) / 180 * pi)^2
 ```
 
 ## Box-Cox Transformation
-```{r}
+```{r fig.height=7}
 library(MASS)
 
 trat <- rep(1:5, each=6)
 repet <- rep(1:6, 5)
-resp <- c(2370,1687,2592,2283,2910,3020,1282,1527,871,1025,825,920,562,321,
-        636,317,485,842,173,127,132,150,129,227,193,71,82,62,96,44)
+resp <- c(2370,1687,2592,2283,2910,
+          3020,1282,1527,871,1025,
+          825,920,562,321,636,317,
+          485,842,173,127,132,150,
+          129,227,193,71,82,62,96,44)
 data <- data.frame(trat, repet, resp)
 
 fit1 <- aov(resp ~ factor(trat), data=data)
@@ -55,7 +155,33 @@ anova(fit1)
 # QQ Plot
 qqnorm(data$resp)
 qqline(data$resp, col=2)
+```
 
+
+```{r fig.height=7}
 # Box-Cox estimation
-boxcox(resp ~ trat, data=data, plotit=T)
+bc <- boxcox(resp ~ trat, data = data, plotit = TRUE)
+lambda <- bc$x[which.max(bc$y)]
+
+data$resp_boxcox <- if (lambda == 0) log(data$resp) else (data$resp^lambda - 1)/lambda
+```
+
+
+```{r fig.height=7}
+data_long <- data %>%
+  pivot_longer(cols = c(resp, resp_boxcox), names_to = "method", values_to = "values")
+
+data_long <- data_long %>%
+  group_by(method) %>%
+  mutate(scaled_values = scale(values)) %>%
+  ungroup()
+
+ggplot(data_long, aes(x = scaled_values, fill = method)) +
+  geom_density(alpha = 0.4, position = "identity") +
+  labs(x = "Scaled values",
+       y = "Freq.") +
+  theme_classic() +
+  scale_fill_manual(values = c("red", "limegreen"), labels = c("Before", "After"))+
+  theme(legend.title = element_blank(),
+        legend.position = "bottom")
 ```
