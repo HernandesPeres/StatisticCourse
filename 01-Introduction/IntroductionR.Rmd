@@ -89,16 +89,13 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 </style>
 
 
-<!-- HTML para o logo fixo no cabeçalho -->
 <div class="logo-fixed-header">
   <img src="G:/My Drive/IC/logoUFV.png" alt="Logo fixo no cabeçalho">
 </div>
 
-<!-- HTML para o logo fixo no canto inferior direito -->
 <div class="logo-fixed-bottom">
   <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
 </div>
----
 ---
 
 ```{r setup, include=FALSE}
@@ -107,10 +104,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### 1.Objects in R
 
-R is an object-oriented language.
+R is an object-oriented language. Object-oriented programming revolves around objects (data structures) and methods (functions that operate on those objects). In R, this allows you to write functions like `print()` or `summary()` that behave differently depending on the type of object you pass in.
 
 ```{r}
-x <- 10  # The '<-' operator works like '=' in Python.
+x <- 10
+x
+
+x = 10 
 x
 
 x <- sqrt(2)  # Store the square root of 2 in x.
@@ -343,6 +343,6 @@ epm
 q1 <- quantile(y, 0.25)
 q2.5 <- quantile(y, 0.025)
 q97.5 <- quantile(y, 0.975)
-IQR(y)
+IQR(y)              # Interquartile range (Q3-Q1)
 boxplot(y)
 ```
