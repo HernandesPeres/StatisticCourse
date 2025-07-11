@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -87,26 +87,27 @@ div.quarto-title-block.default .quarto-title-banner h1 {
   opacity: 0.95;
 }
 </style>
-
-
 <!-- HTML para o logo fixo no cabeçalho -->
-<div class="logo-fixed-header">
-  <img src="G:/My Drive/IC/logoUFV.png" alt="Logo fixo no cabeçalho">
-</div>
+
+::: logo-fixed-header
+<img src="G:/My Drive/IC/logoUFV.png" alt="Logo fixo no cabeçalho"/>
+:::
 
 <!-- HTML para o logo fixo no canto inferior direito -->
-<div class="logo-fixed-bottom">
-  <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
-</div>
----
 
+::: logo-fixed-bottom
+<img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo"/>
+:::
+---
 ### 1. Clean up the environment
+
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 rm(list=ls())  # Remove any previously created objects
 ls()           # Check the objects in the current R session
 ```
 
 ### 2. Installing and loadind packages
+
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 # install.packages(c("ggplot2", "dplyr"))
 
@@ -115,24 +116,42 @@ library(dplyr)
 ```
 
 ### 3. Save and load results
+
 Save created objects
+
 ```{r}
 save(list = ls(all.names = TRUE), file = "Result.RData", envir = .GlobalEnv)
 ```
 
 Load saved file after exiting R
+
 ```{r}
 load("Result.RData", envir = parent.frame(), verbose = FALSE)
 ```
 
 Check objects in the "Result.RData" file
+
 ```{r}
 ls()
 ```
 
 ## Example 1: F-test for Variance
 
-The quality of bricks is considered better when their homogeneity is higher. Six bricks from two brands were tested for shear strength, and rupture forces were measured. The producer of Brand B claims their bricks are better. Use a 5% significance level.
+An F-test is used to determine whether two populations have equal variances. In terms of hypothesis testing, we have:
+
+- $H_0: \sigma_1^2 = \sigma_2^2$  
+- $H_{a1}: \sigma_1^2 > \sigma_2^2$  
+- $H_{a2}: \sigma_1^2 < \sigma_2^2$  
+- $H_{a3}: \sigma_1^2 \neq \sigma_2^2$  
+
+$$
+F_{\text{calc}} = \frac{s_1^2}{s_2^2}, \quad \text{where} \quad
+F_{\text{calc}} \sim F_{\alpha}(n_1 - 1, n_2 - 1)
+$$
+
+The null hypothesis is that the ratio of variances is equal to 1, and the alternative is that it is not equal to 1.
+
+"The quality of bricks is considered better when their homogeneity is higher. Six bricks from two brands were tested for shear strength, and rupture forces were measured. The producer of Brand B claims their bricks are better. Use a 5% significance level."
 
 ```{r}
 brand_A <- c(34.9, 35.5, 38.8, 39.2, 33.7, 37.6)
@@ -144,18 +163,29 @@ var(brand_B)
 
 **a) F-test for variances**
 
-The null hypothesis is that the ratio of variances is equal to 1, and the alternative is that it is not equal to 1.
 ```{r}
 var.test(brand_A, brand_B, ratio = 1, alternative = "greater", conf.level = 0.95)
 ```
+
 Another way to calculate the p-value
 
 ```{r}
 pf(1.326, df1 = 5, df2 = 5, lower = FALSE, log.p = FALSE)
 ```
 
-## Example 2: t-Test for single mean
+## Example 2: t-test for single mean
 
+Usually T-test is used to verify a population mean, when it assume a especific value.
+
+- $H_0: \mu = k;$
+- $H_{a1}: \mu > k, \text{ or} \\$
+- $H_{a2}: \mu < k, \text{ or} \\$
+- $H_{a3}: \mu \neq k$
+
+Then utilizing the formula:
+$$
+t_{\text{calc}} = \frac{\hat{\mu} - \mu}{\frac{s}{\sqrt{n}}}, \quad \text{where} \quad t_{\text{calc}} \sim t_{\alpha(n-1)}
+$$
 In healthy individuals, renal oxygen consumption is normally distributed around 12 cm³/min.We want to test if a certain disease affects this value using data from five patients. Test at a 1% significance level.
 
 ```{r}
@@ -173,11 +203,13 @@ t = t.test(o2$v2,
            alternative = "two.sided", 
            conf.level = 0.99);t
 ```
+
 Another way to calculate the p-value is by using the `pt()` function, providing the test statistic, degrees of freedom, and multiplying by 2, since it is a two-tailed test.
 
 ```{r}
 pt(5.2099, df = 4, lower = FALSE) * 2
 ```
+
 We can also access the values by referring to the object `t` created when using `t.test()`.
 
 When manipulating data, another way to access specific values, besides using the `$` operator, is by using double square brackets `[[]]`.
@@ -210,7 +242,20 @@ ggplot(o2, aes(x = v1, y = v2)) +
   geom_point(aes(y = mean(v2) - sd(v2)), color = "blue", size = 3) +
   labs(y = "Oxygen consumption")
 ```
-## Example 3: t-Test for Two Independent Means (Case A)
+
+## Example 3: t-test for two independent means (Case A)
+
+The main goal of this test is to determine whether two populations share the same mean value for a determinate trait; in other words, we aim to verify if $\mu_1 = \mu_2$.
+
+The two samples can be:
+
+- $\text{Dependents or paired}$
+- $\text{Independent or unpaired (case A and case B)}$
+
+Before performing the T-test, we must first apply the F-test to verify whether the variances of the two populations are equal. This will help determine which case to follow:
+
+- **Case A** – Variances are equal  
+- **Case B** – Variances are not equal
 
 Data represents the strength of two types of concrete. At a 5% significance level, we want to test if concrete 1 is stronger than concrete 2.
 
@@ -220,13 +265,32 @@ c2 <- c(50, 54, 56, 52, 53)
 ```
 
 **a) Test for variance homogeneity**
+
 ```{r}
 var(c1)
 var(c2)
 
 var.test(c1, c2, ratio = 1, alternative = "greater", conf.level = 0.95)
 ```
+
 **b) Conduct the t-test**
+
+Once the is `r var.test(c1, c2, ratio = 1, alternative = "greater", conf.level = 0.95)$p.value`, the variance of the two population are equal, we can follow the equation to calculate the commom variance:
+
+$$
+t_{calc} = \frac{(\hat{\mu}_1 - \hat{\mu}_2) - (\mu_1 - \mu_2)}{\sqrt{s_c^2 \left( \frac{1}{n_1} + \frac{1}{n_2} \right)}}, \quad \text{where} \quad
+t_{tab} = t_{\alpha (n_1 + n_2 - 2)}
+$$
+where the $s_c^2$ is:
+$$
+s_c^2 = \frac{(n_1 - 1)s_1^2 + (n_2 - 1)s_2^2}{n_1 + n_2 - 2}
+$$
+Then, the hypotesis to be tested are:
+
+- $H_0: \mu_1 = \mu_2 \quad (H_0:\mu_1-\mu_2=0);$
+- $H_{a1}: \mu_1 > \mu_2, \text{ or} \\$
+- $H_{a2}: \mu_1 < \mu_2, \text{ or} \\$
+- $H_{a3}: \mu_1 \neq \mu_2$
 
 ```{r}
 t <- t.test(c1, c2, 
@@ -262,7 +326,21 @@ text(x = 2, y = 53.5, labels = "53", col = "black")
 text(x = 1.5, y = 58, labels = paste0("p-valor = ", round(t$p.value, 2)))
 ```
 
-## Example 4: t-Test for Two Independent Means (Case B)
+## Example 4: t-test for two independent means (Case B)
+
+To calculate the statistic for Case B, since the variances are differ between the populations, we use the following equation to compute it:
+
+$$
+t_{calc} = \frac{(\hat{\mu}_L - \hat{\mu}_A) - (\mu_L - \mu_A)}{\sqrt{\frac{s_L^2}{n_L} + \frac{s_A^2}{n_A}}},
+\quad \text{where} \quad
+t_{\text{tab}}=t_{\alpha(n^*)}
+$$
+
+When population variances are not considered equal according to the F-test, a **weighted degree of freedom** is required, which is calculated by
+
+$$
+n^* = \frac{\left( \frac{s_1^2}{n_1} + \frac{s_2^2}{n_2} \right)^2}{\frac{\left( \frac{s_1^2}{n_1} \right)^2}{n_1 - 1} + \frac{\left( \frac{s_2^2}{n_2} \right)^2}{n_2 - 1}}
+$$
 
 Comparing salaries of two professional groups: general liberal professionals and business administration graduates.
 
@@ -284,6 +362,7 @@ var.test(lib,
          alternative = "greater", 
          conf.level = 0.95)
 ```
+
 **b) Conduct the t-test**
 ```{r}
 TST <- t.test(lib, adm, 
@@ -294,6 +373,7 @@ TST <- t.test(lib, adm,
               conf.level = 0.95)
 TST
 ```
+
 **c) Plotting boxplot with mean ± SD**
 ```{r}
 df2 = data.frame(name = factor(rep(c("Lib.", "Adm."), c(7,9))),
@@ -319,7 +399,21 @@ text(x = 1.5, y = 12, labels = paste0("p-valor = ", round(TST$p.value, 2)))
 
 ```
 
-## Example 5: t-Test for Paired Data (Before vs After)
+## Example 5: t-test for paired data (Before vs After) - Dependent
+
+When working with a dependent sample, we aim to verify whether the mean of the differences is equal to zero. Therefore, the hypotheses are as follows:
+
+- $H_0: \mu_d = k$
+- $H_{a1}: \mu_d > k, \quad \text{or}$
+- $H_{a2}: \mu_d < k, \quad \text{or}$
+- $H_{a3}: \mu_d \neq k$
+
+To calculate the statistic, we can use the formula:
+$$
+t_{\text{calc}} = \frac{\hat{\mu}_d - \mu_d}{\frac{s_d}{\sqrt{n}}}
+\quad \text{where} \quad
+t_{\text{calc}} \sim t_{\alpha(n-1)}
+$$
 
 We want to test if a chemical product is effective in repelling household insects. The number of insects was counted before and after the application of the product.
 
@@ -331,6 +425,7 @@ after <- c(4, 0, 3, 5, 3, 4, 2)
 **a) Testing for paired data**
 
 As we can see from the other performed t-tests, here we set paired equal to `TRUE`.
+
 ```{r}
 t.test(after, before, paired = TRUE, alternative = "less", conf.level = 0.95)
 ```
@@ -354,3 +449,4 @@ points(1:2, means, pch = 19, col = "red", cex = 1.5)
 points(1:2, means + sds, pch = 19, col = "blue", cex = 1.5)
 points(1:2, means - sds, pch = 19, col = "blue", cex = 1.5)
 ```
+````

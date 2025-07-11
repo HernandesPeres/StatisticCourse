@@ -100,8 +100,6 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 </div>
 ---
 
-# Split-plot experiment
-
 ## Example 1: Non-significant Interaction (CRD)
 
 This analysis is based on a split-plot experiment conducted under a Completely Randomized Design (CRD). 

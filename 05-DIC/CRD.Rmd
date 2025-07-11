@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -217,7 +217,7 @@ field_layout(data = data,
              design = "DIC")
 ```
 
-### 1. ANOVA Analysis
+### 2. ANOVA Analysis
 
 As we have seen, by using the `aov()` function, we can model the ANOVA for the *yield* through the treatment effects, which correspond to the *trat*.
 
@@ -227,7 +227,21 @@ fit <- aov(yield ~ trat, data = data)
 anova(fit)
 ```
 
-### 2. Residual Analysis
+The CRD statistical model is the simplest one and is assumed to be equal to:
+$$
+y_{ik}=\mu+\tau_i+\varepsilon_{ik}
+$$
+**Where:**
+
+- $y_{ik}:$Is the value of the response variable observed in the k-th repetition of the i-th level of the factor veing tested;
+
+- $\mu:$Is the mean value of the response variable;
+
+- $\tau_i:$ Is the effect of the i-th level of the tested factor;
+
+- $\varepsilon_{ik}:$ Is the experimental error of the observed value $y_{ik}$;
+
+### 3. Residual Analysis
 
 Residual analysis is performed because the assumptions of ANOVA are related to the residual values.
 
@@ -241,13 +255,17 @@ Remember the assumptions of ANOVA:
 
 -   **Independence of observations:** The observations are independent of each other.
 
+When one of these assumptions is violated, the reliability of all parametric tests becomes compromised. Additionally, errors such as Type I and Type II can influence the conclusions drawn about treatment effects. 
+
+Then, the analysis ended up being reduced to mere mathematical data processing.
+
 ```{r}
 residuals <- fit$residuals
 mean_res <- mean(residuals)
 sd_res <- sd(residuals)
 ```
 
-### 3. Normality Tests
+### 4. Normality Tests
 
 Installing and loading the `"nortest"` package, which is used for a trat of normality tests, such as:
 
@@ -257,6 +275,11 @@ Installing and loading the `"nortest"` package, which is used for a trat of norm
 -   Shapiro-Wilk Normality Test - `shapiro.test()`
 -   Shapiro-Francia test - `sf.test()`
 -   Anderson-Darling test - `ad.test()`
+
+At the nomality tests, what we are testing are the hypotesis of:
+
+- $H_0:\text{Residuals follow a normal distribuition}$
+- $H_a:\text{Residual do not follow a normal distribuition}$
 
 ```{r warning=FALSE}
 # install.packages(nortest)
@@ -270,7 +293,7 @@ t5 <- sf.test(residuals)
 t6 <- ad.test(residuals)
 ```
 
-Taking the name, statistics, and p-values from each performed normality test and organizing them into a dataframe.
+Taking the **name**, **statistics**, and **p-values** from each performed normality test and organizing them into a data frame.
 
 ```{r}
 tests <- c(t1$method, t2$method, t3$method, 
@@ -286,7 +309,14 @@ results <- data.frame(Test = tests, Statistic = statistics, P_Value = p_values)
 knitr::kable(results)
 ```
 
-### 4. Homoscedasticity Tests
+### 5. Homoscedasticity Tests
+
+Through the homoscedasticity tests, we aim to verify whether the residual effects have impacted the equality across all treatments.
+
+Then the hypotesis tested are:
+
+- $H_0: \text{The experimental residuals have homogeneous variance}$
+- $H_a: \text{The experimental residuals do not have homogeneous variance}$
 
 ```{r fig.height=6, fig.width=10}
 boxplot(residuals ~ data$trat, 
@@ -301,9 +331,9 @@ library(lawstat)
 levene.test(residuals, data$trat)
 ```
 
-### 5. Independence Check
+### 6. Independence Check
 
-It\`s looks difficult to conclude something right?
+Its looks difficult to conclude something right?
 ```{r fig.height=5, fig.width=10}
 plot(residuals,
      type = "b",
@@ -315,9 +345,19 @@ plot(residuals,
 abline(h = 0, col = "red", lty = 2)
 ```
 
-### 6. Multiple Comparisons
+### 7. Multiple Comparisons
+
+Before proceeding with CMD analysis, we have to remember the experimental principles, which are:
+
+- $\text{Repetition}$
+- $\text{Casualisation}$
+- $\text{Local control (if it is needed)}$
 
 By installing and loading the package `ExpDes` we can speed up the process, utilizing `dic()` for and Completed Ramdomized Design (CMD)
+
+- is used when all experiment condition are homogeneous (environment, materials and others)
+- Treatments are sample at ramdom without any restriction
+- Usually it is used at laboratory conditions
 
 ```{r warning=FALSE}
 # install.packages("ExpDes.pt")
@@ -327,7 +367,7 @@ dic(data$trat, data$yield, quali = TRUE,
     mcomp = "lsdb", hvar= "bartlett", sigT = 0.05, sigF = 0.05)
 ```
 
-### 7. CRD - Unbalanced Data
+### 8. CRD - Unbalanced Data
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 remove(list=ls())
@@ -349,8 +389,6 @@ layout <- field_layout(data = data_unbalanced,
              n_row = 5, 
              design = "DIC")
 layout$plot
-```
-```{r}
 knitr::kable(layout$data)
 ```
 

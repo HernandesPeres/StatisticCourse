@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -99,7 +99,6 @@ div.quarto-title-block.default .quarto-title-banner h1 {
   <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
 </div>
 ---
----
 
 ### 1. Defining data
 cleaning the environment
@@ -172,24 +171,30 @@ library(gmodels)
 ```
 
 **a)Define contrasts**
-
-C1 = mA - mD
+$$
+C_1 = m_A - m_D
+$$
 ```{r}
 fit.contrast(fit1, trat, c(1, 0, 0, -1))
 ```
 
-C2 = mB - mC
+$$
+C_2 = m_B - m_C
+$$
 ```{r}
 fit.contrast(fit1, trat, c(0, 1, -1, 0))
 ```
-
-C3 = mA - mB - mC + mD
+$$
+C_3 = m_A - m_B - m_C + m_D
+$$
 ```{r}
 fit.contrast(fit1, trat, c(1, -1, -1, 1))
 ```
 
 **(order matters!)**
-C4 = mA + mD - mB - mC 
+$$
+C_4 = m_A + m_D - m_B - m_C 
+$$
 ```{r}
 fit.contrast(fit1, trat, c(1, -1, -1, 1))
 ```

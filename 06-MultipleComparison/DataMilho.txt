@@ -1,4 +1,3 @@
-#Exercicio variedades de milho - DIC
 coleta	trat	rep	prod
 1	A	1	25
 5	A	2	26

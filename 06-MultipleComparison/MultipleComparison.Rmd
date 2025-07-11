@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -101,7 +101,8 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 ---
 ---
 
-Loading data
+### 1. Verifying presumption
+
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 source("C:/StatisticsCourse/05-DIC/ExperimentalDesignFunction.R")
 data <- read.table("DataMilho.txt",head=TRUE)
@@ -203,7 +204,7 @@ plot(res,
 abline(h = 0, col = "red", lty = 2)
 ```
 
-### 1. Multiple comparisons
+### 2. Multiple comparisons
 
 ```{r}
 fit2 <- aov(data$prod~data$trat)
@@ -226,7 +227,7 @@ fit3<- dic(data$trat, data$prod, quali = TRUE,
            mcomp = "tukey", sigT = 0.05, sigF = 0.05)
 ```
 
-### 2. Orthogonal Contrasts
+### 3. Orthogonal Contrasts
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 require(gmodels)
@@ -249,7 +250,8 @@ C3 = mB-mC
 fit.contrast(fit2, data$trat, c(0, 1, -1,  0))
 ```
 
-### 3. Scheffe test
+### 4. Scheffe test
+
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 require(DescTools)
 ```
@@ -257,9 +259,9 @@ Scheffe's method applies to the set of estimates of all possible contrasts among
 
 ```{r}
 sch2<-ScheffeTest(fit2, contrasts= matrix(c(3,-1,-1,-1,
-                                             0, 1, 1,-2,
-                                             0, 1,-1,0), 
-                                          ncol=3));
+                                            0, 1, 1,-2,
+                                            0, 1,-1,0), 
+                                            ncol=3));
 
 plot(sch2)
 ```

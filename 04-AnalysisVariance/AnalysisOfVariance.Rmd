@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -99,9 +99,6 @@ div.quarto-title-block.default .quarto-title-banner h1 {
   <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
 </div>
 ---
-
-# Analysis of variance (ANOVA)
-
 ### Exemple 1: Variety of wheat
 
 ```{r}
@@ -129,6 +126,20 @@ sd.prod <- tapply(prod, var, sd); sd.prod
 ```
 
 The `aov()` function is used for **balanced** data.
+
+just remembering, we can compute $SQ_t$ through:
+$$
+SQ_t = \sum_{ik} y_{ik}^2-C, \quad \text{where} \quad  C = \frac{\left( \sum_{ik} y_{ik} \right)^2}{n}
+$$
+also the $SQ_{trat}$, can be compute by:
+
+$$
+SQ_{trat} = \sum \frac{T_i^2}{k} - C
+$$
+As we know, the $SQ_{res}$ is the result of:
+$$
+SQ_{res} = SQ_{t} - SQ_{trat}
+$$
 ```{r}
 fit1 <- aov(prod~factor(var), data = dados)
 anova(fit1)

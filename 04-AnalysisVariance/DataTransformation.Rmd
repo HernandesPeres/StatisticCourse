@@ -1,5 +1,5 @@
 ---
-title: "Analysis of variance"
+title: "Data transformation"
 author: 
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -99,9 +99,10 @@ div.quarto-title-block.default .quarto-title-banner h1 {
   <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
 </div>
 ---
-## Square Root Transformation
 
+### 1. Square Root Transformation
 ```{r}
+library(dplyr)
 library(tidyverse)
 
 birds <- c(22,28,37,34,13,24,39,5,33,32)
@@ -116,8 +117,7 @@ birds_o <- (birds_t)^2
 mean_birds_o <- mean(birds_o)
 ```
 
-## Logarithmic Transformation
-
+### 2. Logarithmic Transformation
 ```{r}
 mydata <- c(12,19,0,15,145,0,32,5,17)
 mean_o <- mean(mydata)
@@ -129,14 +129,14 @@ mean_t <- mean(log10mydata)
 mydata_O10 <- (10^(log10mydata) - 1)
 ```
 
-## Arcsine Transformation
+### 3. Arcsine Transformation
 ```{r}
 x <- c(0.25, 0.31, 0.21, 0.24, 0.3, 0.29, 0.22)
 xt <- asin(sqrt(x)) * 180 / pi
 x_O <- sin((xt) / 180 * pi)^2
 ```
 
-## Box-Cox Transformation
+### 4. Box-Cox Transformation
 ```{r fig.height=7}
 library(MASS)
 

@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -233,6 +233,7 @@ infsup <- apply(datasim, 1, quantile,
 
 xbsim <- rowMeans(datasim); xbsim
 ```
+
 Residuals normality distribuition
 ```{r fig.height=6, fig.width=10}
 library(car)

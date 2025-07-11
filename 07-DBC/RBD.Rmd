@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -111,7 +111,7 @@ data$bloco <- as.factor(data$bloco)
 n <- length(prod)
 ```
 
-### 1.1 Field layout
+### 1. Field layout
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 source("C:/StatisticsCourse/05-DIC/ExperimentalDesignFunction.R")
@@ -123,7 +123,7 @@ field_layout(data = data,
              design = "DBC")$plot
 ```
 
-### 1.2 Basic Descriptive Statistics
+### 2. Basic Descriptive Statistics
 
 ```{r}
 colnames(data)[colnames(data) == "rep"] <- "bloco"
@@ -134,7 +134,7 @@ mean.prodb <- tapply(data$prod, data$bloco, mean)
 var.prodb <- tapply(data$prod, data$bloco, var)
 ```
 
-### 1.3 ANOVA and Residuals
+### 3. ANOVA and Residuals
 
 ```{r}
 fit1 <- aov(data$prod ~ data$bloco + data$trat)
@@ -143,7 +143,7 @@ res <- residuals(fit1)
 
 Residual Diagnostics
 
-**3.1. Checking residuals normality**
+**Checking residuals normality**
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 xb <- mean(res)
@@ -175,13 +175,13 @@ results <- data.frame(Statistic = sapply(tests, function(x) x$statistic),
 knitr::kable(results)
 ```
 
-**3.2. Checking residual Homoscedasticity**
+**Checking residual Homoscedasticity**
 
 ```{r}
 bartlett.test(res, data$trat)
 ```
 
-**3.3. Checking residuals independence**
+**Checking residuals independence**
 
 ```{r}
 plot(res,
@@ -194,7 +194,41 @@ plot(res,
 abline(h = 0, col = "red", lty = 2)
 ```
 
-### 1.4 ANOVA Summary
+### 4. ANOVA Summary
+
+- Before moving forward, it's important to understand some of the parameters that distinguish the randomized block design (RBD) from the completely randomized design (CRD).
+
+- The randomized block design is used to control disturbing factors that could compromise the homogeneity of experimental conditions.
+
+- Blocks are employed to account for differences between experimental units, such as soil fertility, water availability, light exposure, and others.
+
+- All levels of a factor must be tested within each block, which should be internally homogeneous. Randomization is restricted and must be performed within each block.
+
+- If the source of variation is not being controlled, it will be absorbed into the residual, which may increase the value of $QM_{res}$.
+
+- An increase in $QM_{res}$ can make it harder to detect a significant effect between treatments, even when they may actually differ
+
+So now, in RBD, the model is:
+$$
+y_{ik} = \mu + \tau_i + \beta_k + \varepsilon_{ik}
+$$
+
+We already know how to compute $SQ_t$, $SQ_{trat}$ and $SQ_{res}$ for a CRD, but know we need to include another factor that helps to reduce the $QM_{res}$, which is the $SQ_{b}$
+
+$$
+SQ_t = \sum_{ik} y_{ik}^2-C, \quad \text{where} \quad  C = \frac{\left( \sum_{ik} y_{ik} \right)^2}{n}
+$$
+
+$$
+SQ_{trat} = \sum \frac{T_i^2}{k} - C
+$$
+$$
+SQ_b = \sum \frac{B_k^2}{I} - C
+$$
+Thus, we are that the $SQ_{res}$ is compute by:
+$$
+SQ_{res} = SQ_{t} - SQ_{trat} - SQ_b
+$$
 
 Utilizing the `ExpDes.pt` package we can run ANOVA for a Randomized Completed Blocks Design, using `dbc()` function.
 
@@ -220,7 +254,7 @@ data$bloco <- factor(data$bloco)
 knitr::kable(data)
 ```
 
-### 2.1 Field layout
+### 1. Field layout
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 source("C:/StatisticsCourse/05-DIC/ExperimentalDesignFunction.R")
@@ -232,7 +266,7 @@ field_layout(data = data,
              design = "DBC")$plot
 ```
 
-### 2.2 ANOVA and residuals
+### 2. ANOVA and residuals
 
 ```{r}
 fit_list <- list(altpvagem = aov(data$altpvagem ~ data$bloco + data$trat),
@@ -244,7 +278,7 @@ residuals_list <- lapply(fit_list, residuals)
 lapply(fit_list, anova)
 ```
 
-### 2.3 Coefficient of Variation (CV)
+### 3. Coefficient of Variation (CV)
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(agricolae)
@@ -265,17 +299,7 @@ normality_table <- data.frame(Statistic = stats, `p-value` = pvals)
 knitr::kable(normality_table)
 ```
 
-### 2.4 Multivariate ANOVA
-
-```{r}
-manova_formula <- as.formula(paste0("cbind(", 
-                                    paste(names(data)[-c(1,2)],
-                                    collapse=","), ") ~ trat+bloco"))
-
-fit_manova <- aov(manova_formula, data=data)
-
-summary(fit_manova)
-```
+### 4. Multivariate ANOVA
 
 Using ExpDes.pt for RCBD analysis
 
