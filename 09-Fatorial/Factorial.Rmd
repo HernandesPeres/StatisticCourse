@@ -100,6 +100,29 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 </div>
 ---
 
+In factorial experiments, two or more factors are studied simultaneously, and each factor has two or more levels.
+
+- Factorial experiments are not a design themselves, but rather a scheme that represents how treatments are arranged into experimental units.
+
+- In factorial experiments, each level of a factor must be combined with all levels of the other factor(s) to form the complete set of treatments.
+
+- **Main Effect:** This refers to the effect of each factor (e.g., A or B) independently of the other factors. In other words, it is the change in the response variable caused by changing the levels of a given factor.
+
+- **Interaction Effect:** This is the combined effect of multiple factors on the response variable. Interaction occurs when the effect of the levels of one factor depends on the levels of another factor.
+
+The model for a factorial experiment under **CRD**:
+$$
+Y_{ijk}=\mu+\alpha_i+\beta_j+(\alpha\beta)_{ij}+\varepsilon_{ijk}
+$$
+Under **RBD**:
+$$
+Y_{ijk}=\mu+\alpha_i+\beta_j+(\alpha\beta)_{ij}+\omega_k +\varepsilon_{ijk}
+$$
+Under **LSD**:
+$$
+Y_{ijk}=\mu+\alpha_i+\beta_j+(\alpha\beta)_{ij}+\lambda_r+\gamma_s+ +\varepsilon_{ijk}
+$$
+
 ## Example 1: Non-significant Interaction (CRD)
 
 A researcher designed a factorial experiment in a Completely Randomized Design (CRD) with 5 replications to evaluate the effect of harvest time and combine type on grain loss (kg/ha). Three harvest times (H1, H2, H3) and two types of combine harvesters (T1, T2) were tested.

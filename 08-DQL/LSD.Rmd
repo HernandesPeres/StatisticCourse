@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -100,7 +100,21 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 </div>
 ---
 
-# Latin Square Design
+So know the statistical model of a **Latin Square Design**:
+
+$$
+y_{jk(i)}=\mu+\tau_i+\alpha_j+\beta_k+\varepsilon_{jk(i)}
+$$
+**Where:**
+
+- $y_{jk(i)}$: Response variable observed at the j-th row and k-th column under the i-th level of the studied factor
+- $\mu$: Overall population mean of the response variable
+- $\tau_i$: Effect of the i-th level of the factor under study
+- $\alpha_j$: Effect of the j-th level of Factor A
+- $\beta_k$: Effect of the k-th level of Factor B
+- $\varepsilon_{jk(i)}$: Experimental error associated with the observation at position jk(i)
+
+## Example 1
 
 A researcher designed an experiment to compare 5 types of bacilli (A, B, C, D, and E) used in yogurt production. However, the researcher found that the 25 available 1-liter milk samples were not homogeneous due to variations in fat content and acidity level. To control these two sources of variation, the bacilli were randomly assigned to the milk samples such that each bacillus was tested under all conditions.
 
@@ -148,6 +162,7 @@ qqPlot(res,
        pch = 20,
        envelope = 0.95)  # 95% confidence envelope
 ```
+
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(nortest)
 tests <- list(ks = ks.test(res, "pnorm", xb, sx),
@@ -187,7 +202,8 @@ fit2 <- aov(data$volume ~ data$linha + data$coluna + data$trat)
 print(anova(fit2), digits=7)
 ```
 
-Using ExpDes.pt
+
+Using `ExpDes.pt`
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(ExpDes.pt)
 fit3 <- dql(data$trat, data$linha, data$coluna, data$volume, 
