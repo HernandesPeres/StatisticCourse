@@ -1,0 +1,349 @@
+---
+title: "Randomized Block Design"
+author: 
+  - name: Undergrad Hernandes Peres
+    email: Hernandes.panichi@ufv.br
+    affiliation:
+      - name: Biometrics and Quantitative genetics Lab. 
+        url: https://idata.ufv.br/
+        city: Viçosa
+        region: Minas Gerais
+        country: Brazil
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: Sections
+    toc-location: left
+    number-sections: false
+    number-depth: 4
+    toc_float: true
+    theme: [zephyr, theme.scss]
+    embed-resources: true
+    self-contained: true
+    anchor-sections: true
+    smooth-scroll: true
+    link-external-newwindow: false
+    code-fold: false
+    code-overflow: wrap
+    code-block-border-left: "#781c1e"
+    code-copy: hover
+    code-summary: "Show/Hide Code"
+    lang: en
+    fig-format: png
+    fig-responsive: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    page-layout: article
+    title-block-banner-color: 'white'
+    highlight-style: github
+editor_options: 
+  chunk_output_type: console
+---
+
+<style>
+/* Cor de fundo do banner de título (título principal da página) */
+div.quarto-title-block.default .quarto-title-banner {
+  background-color: #a30202 !important;
+  text-align: center;
+  padding: 20px 0;
+  border: none;
+  box-shadow: none;
+}
+
+/* Cor e estilo do título principal (texto) */
+div.quarto-title-block.default .quarto-title-banner h1 {
+  color: white !important;
+  font-size: 2em;
+  margin: 0;
+}
+
+/* Logo fixa no cabeçalho */
+.logo-fixed-header {
+  position: fixed;
+  top: 0;
+  left: 20px;
+  z-index: 1000;
+  padding: 10px;
+}
+
+.logo-fixed-header img {
+  max-width: 120px;
+  height: auto;
+  opacity: 0.95;
+}
+
+/* Logo fixa no canto inferior direito */
+.logo-fixed-bottom {
+  position: fixed;
+  bottom: 20px;
+  right: -10px;
+  z-index: 1000;
+}
+
+.logo-fixed-bottom img {
+  max-width: 460px;
+  height: auto;
+  opacity: 0.95;
+}
+</style>
+
+
+<!-- HTML para o logo fixo no cabeçalho -->
+<div class="logo-fixed-header">
+  <img src="G:/My Drive/IC/logoUFV.png" alt="Logo fixo no cabeçalho">
+</div>
+
+<!-- HTML para o logo fixo no canto inferior direito -->
+<div class="logo-fixed-bottom">
+  <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
+</div>
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(sommer)
+library(emmeans)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(broom.mixed)
+library(tibble)
+library(ggpubr)
+```
+
+## Example 1. RBD
+
+```{r}
+rm(list = ls())
+setwd("C:/StatisticsCourse/13-MixedModels")
+data <- read.table("DataMilho.txt", header = T)
+
+# Setting as factor
+data$rep <- as.factor(data$rep)
+data$inc.bloco <- as.factor(data$inc.bloco)
+data$gen <- as.factor(data$gen)
+data$row <- data$row
+data$col <- data$col
+
+levels(data$trat)
+levels(data$bloco)
+```
+
+$\text{Why is better to model using mixed models?}$
+
+**Some advantages of Mixed Models are:**
+
+- $\text{Real-world complexity:}$ These models acknowledge that observations within the same group are likely correlated, rather than treating every observation as completely independent;
+
+- $\text{Mode accurate estimations:}$ By modeling random effects, mixed models **reduce bias** and improve predictions;
+
+Through utilizing the package `sommer`, and its functions `mmes()` we can model the factors as we want
+
+### Modelling genotypes as fixed effects
+
+The model adjust the `yield` by treating `genotypes` as fixed effects in order to estimate the BLUE for each genotype.
+
+$\text{When use BLUE?}$
+
+- When a **specific mean** for each genotype is needed without accounting for genetic variance;
+
+- When your goals is comparison among kwown genotypes in trials, such as **selecting the best ones** from a set;
+
+- When utilizing BLUEs, we are **unable to compute heritability** because variance component values are not available.
+
+The model adjusts the yield by considering genotypes as fixed effects, in order to estimate the **effect of each genotype**. It also accounts for replications as fixed effects and the variation within incomplete blocks as a random effect.
+
+- $\text{Yield~gen+rep}:$ `gen` and `rep` are treated as fixed effect, because we want to compute the effect of each genotype;
+
+- $\text{~Bloco}:$ Block is a random effect, once it allows to control the variation between blocks. Which helps to control the environmental variability and increase the precision to analyse the genotypes
+
+```{r}
+#pkgbuild::check_build_tools(debug = TRUE)
+#install.packages("sommer", type = "binary")
+
+library(sommer)
+
+set.seed(7)
+model1 <- mmes(yield~gen+rep,
+              random = ~ rep:inc.bloco,
+              data = data)
+
+plot(model1)
+```
+
+**Some important statistical components**
+
+- $\text{b, u, bu:}$ Are parameters that represent the estimated effects - Fixed, random and their combination;
+
+```{r}
+model1$b
+```
+
+As we can see, the `intercept` corresponds to `r model1$b[1]`, which also represents the level G01. The second value, `r model1$b[2]`, indicates the difference below the first one, and so on...
+
+So, just by the values, we can conclude that the best genotype is de $G_{01}$.
+
+The last two values reflect the same logic, but now for the `rep` factor, since it was also set as a fixed effect.
+
+```{r}
+model1$u
+```
+
+As we can see, some values are positive and other negatives, so what it does mean?
+
+- As we are modeling yield across different blocks, these effects highlight which blocks are more promising.
+
+### Modelling gen as random effects
+
+The model adjust the `Yield` considering the genotypes as random effects (BLUPs), to estimate the **genetic variability** within de population. Block effects are considered as fixed effects.
+
+$\text{When use BLUP?}$
+
+- When interesting in predicting **genetic values** or **breeding values** based on variance components;
+
+- When working with **genomic selection** or **prediction contexts**;
+
+- When Handling with **unbalanced data** or **missing genotypes**.
+
+```{r}
+model2 <- mmes(yield ~ rep,
+               random = ~ gen + rep:inc.bloco,
+               data = data)
+```
+
+```{r}
+model2$b
+```
+
+**Now, what it does mean?**
+
+Basically represent the difference between the factor `rep`, as it treated now as fixed effect.
+
+## Model analysis and comparisons
+
+### What is REML?
+
+- Restricted estimation Maximun likelihood.
+
+- **REML** is a method that maximize the likeliihood of the variance componets while delete the effect of fixed parameters (such as mean and linear tendencies). 
+
+```{r}
+summary(model, ddf = "Kenward-Roger")
+```
+
+
+```{r}
+summary(model2, ddf = "Kenward-Roger")
+```
+[^1]Kenward-Roger: para calcular os graus de liberdade para os efeitos- Modelos Mistos e para obtenção de um teste F mais robusto.
+
+[^1]: Kenward, M.G. e Roger, J. H. (1997). Small Sample Inference for Fixed Effects from Restricted Maximum Likelihood. Biometrics, Vol 53, No. 3 pp 983-997 
+
+
+## Fixed Effects Summary
+
+```{r}
+mod.fg$b
+```
+
+## Random Effects Summary
+
+```{r}
+mod.rg$u
+```
+
+## Variance Components
+
+```{r}
+mod.fg$residuals
+mod.rg$
+```
+
+## Fitted Values and Residuals
+
+```{r}
+data$fitted_fg <- mod.fg$fitted
+head(data$fitted_fg)
+```
+
+## Estimating BLUEs (Fixed genotypes)
+
+```{r}
+BLUEs <- data %>%
+  select(trat) %>%
+  distinct() %>%
+  mutate(BLUE = mod.fg$fitted[!duplicated(data$trat)])
+
+head(BLUEs)
+```
+
+## Estimating BLUPs (Random genotypes)
+
+```{r}
+data$fitted_rg <- mod.rg$fitted
+
+BLUPs <- data %>%
+  select(trat) %>%
+  mutate(BLUP = mod.rg$fitted)
+```
+
+## Heritability Calculation
+
+```{r}
+
+vvc.g <- mod.rg$var.comp[grep("gen", rownames(mod.rg$var.comp)), "VarComp"]
+vc.e <- mod.rg$var.comp[grep("units", rownames(mod.rg$var.comp)), "VarComp"]
+
+nreps <- 3
+
+hc <- vc.g / (vc.g + vc.e / nreps)
+hc
+
+```
+
+## Plotting BLUPs with Confidence Intervals
+
+```{r}
+BLUPs <- BLUPs %>%
+  arrange(desc(BLUP)) %>%
+  mutate(gen = factor(gen, levels = gen))
+
+ggplot(BLUPs, aes(x = gen, y = BLUP)) +
+  geom_bar(stat = "identity", fill = "#588157", color = "black") +
+  theme_minimal() +
+  labs(title = "BLUPs", x = "Genotypes", y = "Predicted Value") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Clustering BLUPs
+
+```{r}
+dist_blups <- dist(setNames(BLUPs$BLUP, BLUPs$gen))
+hc <- hclust(dist_blups, method = "average")
+
+plot(hc, main = "Dendrogram", xlab = "Genotypes", ylab = "Distance")
+cut_height <- mean(hc$height) + 1.25 * sd(hc$height)
+abline(h = cut_height, col = "red", lty = 2)
+
+cluster_groups <- cutree(hc, h = cut_height)
+BLUPs <- BLUPs %>% mutate(cluster = factor(cluster_groups[gen]))
+head(BLUPs)
+```
+
+## Regression: BLUE vs BLUP
+
+```{r}
+joined <- left_join(BLUEs, BLUPs, by = "gen")
+
+ggplot(joined, aes(x = BLUE, y = BLUP)) +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  geom_abline(slope = 1, intercept = 0, linetype = 2) +
+  theme_bw() +
+  coord_fixed() +
+  labs(title = "BLUE vs BLUP", x = "BLUE", y = "BLUP")
+```
+
+
+
