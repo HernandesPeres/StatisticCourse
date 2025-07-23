@@ -4,8 +4,8 @@ author:
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -229,7 +229,7 @@ Basically represent the difference between the factor `rep`, as it treated now a
 - **REML** is a method that maximize the likeliihood of the variance componets while delete the effect of fixed parameters (such as mean and linear tendencies). 
 
 ```{r}
-summary(model, ddf = "Kenward-Roger")
+summary(model1, ddf = "Kenward-Roger")
 ```
 
 
@@ -244,12 +244,14 @@ summary(model2, ddf = "Kenward-Roger")
 ## Fixed Effects Summary
 
 ```{r}
+mod.fg <- model1
 mod.fg$b
 ```
 
 ## Random Effects Summary
 
 ```{r}
+mod.rg <- model2
 mod.rg$u
 ```
 

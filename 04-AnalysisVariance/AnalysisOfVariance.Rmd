@@ -4,8 +4,8 @@ author:
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -41,6 +41,7 @@ editor_options:
   chunk_output_type: console
 ---
 
+```{=html}
 <style>
 /* Cor de fundo do banner de título (título principal da página) */
 div.quarto-title-block.default .quarto-title-banner {
@@ -87,86 +88,110 @@ div.quarto-title-block.default .quarto-title-banner h1 {
   opacity: 0.95;
 }
 </style>
-
-
+```
 <!-- HTML para o logo fixo no cabeçalho -->
-<div class="logo-fixed-header">
-  <img src="G:/My Drive/IC/logoUFV.png" alt="Logo fixo no cabeçalho">
-</div>
+
+::: logo-fixed-header
+<img src="G:/My Drive/IC/logoUFV.png" alt="Logo fixo no cabeçalho"/>
+:::
 
 <!-- HTML para o logo fixo no canto inferior direito -->
-<div class="logo-fixed-bottom">
-  <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
-</div>
+
+::: logo-fixed-bottom
+<img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo"/>
+:::
 ---
-### Exemple 1: Variety of wheat
+
+### Exemple 1: Wheat varieties
 
 ```{r}
 rm(list = ls())
+
 var <- rep(1:2,each=5);var
-
-prod <- c(2.0,2.2,2.3,2.5,3.0,3.2,2.8,2.9,2.4,2.7);prod
-
-dados <- data.frame(var, prod);dados
+yield <- c(2.0,2.2,2.3,2.5,3.0,3.2,2.8,2.9,2.4,2.7);yield
+dados <- data.frame(var, yield);dados
 ```
 
 Calculating mean
+
 ```{r}
-mean.prod <- tapply(prod, var, mean); mean.prod
+mean.yield <- tapply(yield, var, mean); mean.yield
 ```
 
 Calculating variance
+
 ```{r}
-var.prod <-tapply(prod, var, var); var.prod     
+var.yield <- tapply(yield, var, var); var.yield     
 ```
 
 Calculating standard deviation
+
 ```{r}
-sd.prod <- tapply(prod, var, sd); sd.prod      
+sd.yield <- tapply(yield, var, sd); sd.yield      
 ```
 
 The `aov()` function is used for **balanced** data.
 
-just remembering, we can compute $SQ_t$ through:
+just remembering, we can compute $SQ_t$ through: 
+
 $$
 SQ_t = \sum_{ik} y_{ik}^2-C, \quad \text{where} \quad  C = \frac{\left( \sum_{ik} y_{ik} \right)^2}{n}
-$$
+$$ 
 also the $SQ_{trat}$, can be compute by:
 
 $$
 SQ_{trat} = \sum \frac{T_i^2}{k} - C
-$$
-As we know, the $SQ_{res}$ is the result of:
+$$ 
+As we know, the $SQ_{res}$ is the result of: 
+
 $$
 SQ_{res} = SQ_{t} - SQ_{trat}
 $$
+
 ```{r}
-fit1 <- aov(prod~factor(var), data = dados)
+fit1 <- aov(yield~factor(var), data = dados)
 anova(fit1)
 
 summary(fit1)
 ```
 
+As we can see the p-value was not significant, once it greater than $\alpha = 0.05$.
+
 Fitting a linear model using `lm()` function, which can be used for **balanced** and **unbalanced** data.
+
 ```{r}
-fit2 <- lm(prod~factor(var), data = dados)
+fit2 <- lm(yield~factor(var), data = dados)
 anova(fit2)
 ```
 
 Extracting the predicted values from the model using `fitted.values()`
+
 ```{r}
 yh <- fitted.values(fit1);yh
 ```
 
 Getting residual values from the fitted model using `residuals()`
+
 ```{r}
 res <- residuals(fit1); res
 ```
 
 Residual standardized
+
 ```{r}
 res_Stand <- rstandard(fit1); res_Stand
 round(data.frame(res,res_Stand),5)
 
-(prod-yh) # other way to get res
+(yield-yh) # other way to get res
 ```
+
+$\text{So, why we compute the residual values?}$
+
+In general, we wanto to verify some points, such as:
+
+- $\text{Check assumptions}:$ Manu models rely on assumptions (like residual being randomly distributed).
+
+- $\text{Detect patters}:$ If residual show a pattern (like always increase), that can signal the model is missing something important.
+
+- $\text{Evaluate model accuracy}:$ Residual show how close predictions are to real values - Smaller residuals means a better fit.
+

@@ -4,8 +4,8 @@ author:
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -235,17 +235,17 @@ require(gmodels)
 
 Some multiple comparisons can be performed using orthogonal contrasts. Below, we present three examples of such contrasts, which allow us to test specific and independent hypotheses about the treatment means.
 
-C1 = 3mA-mB-mC-mD
+$$C_1 = 3m_A-m_B-m_C-m_D$$
 ```{r}
 fit.contrast(fit2, data$trat, c(3, -1, -1,  -1))
 ```
 
-C2 = mB+mC-2mD
+$$C_2 = m_B+m_C-2m_D$$
 ```{r}
 fit.contrast(fit2, data$trat, c(0, 1, 1,  -2))
 ```
 
-C3 = mB-mC
+$$C_3 = m_B-m_C$$
 ```{r}
 fit.contrast(fit2, data$trat, c(0, 1, -1,  0))
 ```

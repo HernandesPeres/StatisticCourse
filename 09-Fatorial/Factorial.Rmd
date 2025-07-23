@@ -4,8 +4,8 @@ author:
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -123,6 +123,16 @@ $$
 Y_{ijk}=\mu+\alpha_i+\beta_j+(\alpha\beta)_{ij}+\lambda_r+\gamma_s+ +\varepsilon_{ijk}
 $$
 
+$\text{What are we testing at a factorial experiment?}$
+
+-$H_0:$ The factors A and B are independent with respect to the response variable;
+
+-$H_a:$  The factors A and B are NOT independent with respect to the response variable;
+
+So, if the interaction is **not significant**, we should continue the study by analyzing the **factors independently**.
+
+However, if the interaction turns out to be **significant**, comparisons between the levels of one factor should be made **at each level of the other factor**, since the result indicates a meaningful interaction. In other words, the effect of one factor depends on the level of the other.
+
 ## Example 1: Non-significant Interaction (CRD)
 
 A researcher designed a factorial experiment in a Completely Randomized Design (CRD) with 5 replications to evaluate the effect of harvest time and combine type on grain loss (kg/ha). Three harvest times (H1, H2, H3) and two types of combine harvesters (T1, T2) were tested.
@@ -171,6 +181,8 @@ xyplot(perda ~ tipo,
                   lines = list(lty = 1, lwd = 2, col = c("red", "blue", "green"))))
 
 ```
+
+When the lines are parallel or approximately parallel, it indicates that the interaction is **not significant**.
 
 ### 2. Field layout
 
@@ -229,13 +241,13 @@ fit3 <- fat2.dic(data$horario, data$tipo, data$perda,
 
 This is a factorial experiment arranged in a Randomized Complete Block
 Design (RCBD) to evaluate the effects of two factors (A and B) on the
-variable fat content (gordura). The interaction between factors is
+variable Plant Height (PH). The interaction between factors is
 considered non-significant.
 
 ```{r}
 rm(list=ls())
 
-data <- read.table("DataSorveteNS.txt", header=TRUE)
+data <- read.table("DataPH.NS.txt", header=TRUE)
 data$trat <- factor(data$trat)
 data$bloco <- factor(data$bloco)
 data$A <- factor(data$A)
@@ -247,14 +259,14 @@ data$B <- factor(data$B)
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(lattice)
 
-xyplot(gordura ~ A, 
+xyplot(PH ~ A, 
        groups = B, 
        data = data, jitter.x = TRUE, type = c("p", "a"))
 ```
 
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-xyplot(gordura ~ B, 
+xyplot(PH ~ B, 
        groups = A, 
        data = data, jitter.x = TRUE, type = c("p", "a"))
 ```
@@ -274,7 +286,7 @@ field_layout(data = data,
 ### 3. Assumption checking
 
 ```{r}
-fit1 <- aov(data$gordura ~ data$trat + data$bloco)
+fit1 <- aov(data$PH ~ data$trat + data$bloco)
 anova(fit1)
 ```
 
@@ -293,7 +305,7 @@ bartlett.test(residuals(fit1) ~ data$trat)
 ### 4. Analysis of variance
 
 ```{r}
-fit2 <- aov(data$gordura ~ data$bloco + data$A * data$B)
+fit2 <- aov(data$PH ~ data$bloco + data$A * data$B)
 anova(fit2)
 
 model.tables(fit2, type = "means")
@@ -304,7 +316,7 @@ model.tables(fit2, type = "means")
 ```{r}
 library(ExpDes.pt)
 
-fit3 <- fat2.dbc(data$A, data$B, data$bloco, data$gordura,
+fit3 <- fat2.dbc(data$A, data$B, data$bloco, data$PH,
                  quali = c(TRUE, TRUE),
                  mcomp = "tukey",
                  fac.names = c("A", "B"),
@@ -399,6 +411,8 @@ xyplot(alt ~ E,
                                col = c("red","blue","green"))))
 
 ```
+
+When the lines are **not** parallel or approximately parallel, it indicates that the interaction is **significant**.
 
 ### 2. Field layout
 ```{r}

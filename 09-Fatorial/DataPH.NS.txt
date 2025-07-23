@@ -1,4 +1,4 @@
-trat	A	B     bloco	gordura
+trat	A	B     bloco	PH
 1	1	1	1	43
 1	1	1	2	33
 2	1	2	1	41

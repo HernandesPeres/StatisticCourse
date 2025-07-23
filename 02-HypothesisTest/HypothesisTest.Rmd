@@ -4,8 +4,8 @@ author:
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -140,8 +140,8 @@ ls()
 An F-test is used to determine whether two populations have equal variances. In terms of hypothesis testing, we have:
 
 - $H_0: \sigma_1^2 = \sigma_2^2$  
-- $H_{a1}: \sigma_1^2 > \sigma_2^2$  
-- $H_{a2}: \sigma_1^2 < \sigma_2^2$  
+- $H_{a1}: \sigma_1^2 > \sigma_2^2, \quad \text{or}$  
+- $H_{a2}: \sigma_1^2 < \sigma_2^2, \quad \text{or}$  
 - $H_{a3}: \sigma_1^2 \neq \sigma_2^2$  
 
 $$
@@ -149,7 +149,7 @@ F_{\text{calc}} = \frac{s_1^2}{s_2^2}, \quad \text{where} \quad
 F_{\text{calc}} \sim F_{\alpha}(n_1 - 1, n_2 - 1)
 $$
 
-The null hypothesis is that the ratio of variances is equal to 1, and the alternative is that it is not equal to 1.
+The null hypothesis $(H_0)$ is that the ratio of variances is equal to 1, and the alternative is that it is not equal to 1.
 
 "The quality of bricks is considered better when their homogeneity is higher. Six bricks from two brands were tested for shear strength, and rupture forces were measured. The producer of Brand B claims their bricks are better. Use a 5% significance level."
 
@@ -178,15 +178,15 @@ pf(1.326, df1 = 5, df2 = 5, lower = FALSE, log.p = FALSE)
 Usually T-test is used to verify a population mean, when it assume a especific value.
 
 - $H_0: \mu = k;$
-- $H_{a1}: \mu > k, \text{ or} \\$
-- $H_{a2}: \mu < k, \text{ or} \\$
+- $H_{a1}: \mu > k, \quad \text{or}\\$
+- $H_{a2}: \mu < k, \quad \text{or}\\$
 - $H_{a3}: \mu \neq k$
 
 Then utilizing the formula:
 $$
 t_{\text{calc}} = \frac{\hat{\mu} - \mu}{\frac{s}{\sqrt{n}}}, \quad \text{where} \quad t_{\text{calc}} \sim t_{\alpha(n-1)}
 $$
-In healthy individuals, renal oxygen consumption is normally distributed around 12 cm³/min.We want to test if a certain disease affects this value using data from five patients. Test at a 1% significance level.
+"In healthy individuals, renal oxygen consumption is normally distributed around 12 cm³/min.We want to test if a certain disease affects this value using data from five patients. Test at a 1% significance level."
 
 ```{r}
 o2 = data.frame(v1 = as.factor(1),
@@ -204,11 +204,17 @@ t = t.test(o2$v2,
            conf.level = 0.99);t
 ```
 
-Another way to calculate the p-value is by using the `pt()` function, providing the test statistic, degrees of freedom, and multiplying by 2, since it is a two-tailed test.
+Another way to calculate the **p-value** is by using the `pt()` function, providing the test statistic, degrees of freedom, and multiplying by 2, since it is a two-tailed test.
 
 ```{r}
 pt(5.2099, df = 4, lower = FALSE) * 2
 ```
+
+$\text{Why we multiply by 2?}$
+
+The term `pt(5.2099, df = 4, lower = FALSE)` calculates the **upper-tail probability** (p-value) for a t-statistic of `r t[[1]]` with 4 degrees of freedom.
+
+Then, multiplying this by 2 gives a two-tailed p-value, which accounts for both extremes (positive and negative) of the t-distribution.
 
 We can also access the values by referring to the object `t` created when using `t.test()`.
 
@@ -252,7 +258,7 @@ The two samples can be:
 - $\text{Dependents or paired}$
 - $\text{Independent or unpaired (case A and case B)}$
 
-Before performing the T-test, we must first apply the F-test to verify whether the variances of the two populations are equal. This will help determine which case to follow:
+Before performing the t-Test, we must first apply the F-test to verify whether the variances of the two populations are equal. This will help determine which case to follow:
 
 - **Case A** – Variances are equal  
 - **Case B** – Variances are not equal
@@ -275,21 +281,21 @@ var.test(c1, c2, ratio = 1, alternative = "greater", conf.level = 0.95)
 
 **b) Conduct the t-test**
 
-Once the is `r var.test(c1, c2, ratio = 1, alternative = "greater", conf.level = 0.95)$p.value`, the variance of the two population are equal, we can follow the equation to calculate the commom variance:
+Once the **p-value** is `r var.test(c1, c2, ratio = 1, alternative = "greater", conf.level = 0.95)$p.value`, the variance of the two population are equal, we can follow the equation to calculate the common variance:
 
 $$
 t_{calc} = \frac{(\hat{\mu}_1 - \hat{\mu}_2) - (\mu_1 - \mu_2)}{\sqrt{s_c^2 \left( \frac{1}{n_1} + \frac{1}{n_2} \right)}}, \quad \text{where} \quad
 t_{tab} = t_{\alpha (n_1 + n_2 - 2)}
 $$
-where the $s_c^2$ is:
+Where the $s_c^2$ is:
 $$
 s_c^2 = \frac{(n_1 - 1)s_1^2 + (n_2 - 1)s_2^2}{n_1 + n_2 - 2}
 $$
-Then, the hypotesis to be tested are:
+Then, the hypothesis to be tested are:
 
 - $H_0: \mu_1 = \mu_2 \quad (H_0:\mu_1-\mu_2=0);$
-- $H_{a1}: \mu_1 > \mu_2, \text{ or} \\$
-- $H_{a2}: \mu_1 < \mu_2, \text{ or} \\$
+- $H_{a1}: \mu_1 > \mu_2, \quad \text{or} \\$
+- $H_{a2}: \mu_1 < \mu_2, \quad \text{or} \\$
 - $H_{a3}: \mu_1 \neq \mu_2$
 
 ```{r}
@@ -298,7 +304,7 @@ t <- t.test(c1, c2,
        paired = FALSE, 
        var.equal = TRUE, 
        alternative = "greater", 
-       conf.level = 0.95)
+       conf.level = 0.95);t
 ```
 
 **c) Plotting two samples test**
@@ -342,9 +348,9 @@ $$
 n^* = \frac{\left( \frac{s_1^2}{n_1} + \frac{s_2^2}{n_2} \right)^2}{\frac{\left( \frac{s_1^2}{n_1} \right)^2}{n_1 - 1} + \frac{\left( \frac{s_2^2}{n_2} \right)^2}{n_2 - 1}}
 $$
 
-Comparing salaries of two professional groups: general liberal professionals and business administration graduates.
+Comparing salaries of two professional groups: general **liberal professionals** and business **administration graduates**.
 
-Test at a 5% significance level.
+Test at a $\alpha=0.05$ significance level.
 
 ```{r}
 lib <- c(6.6, 10.3, 10.8, 12.9, 9.2, 12.3, 7.0)
@@ -415,7 +421,7 @@ t_{\text{calc}} = \frac{\hat{\mu}_d - \mu_d}{\frac{s_d}{\sqrt{n}}}
 t_{\text{calc}} \sim t_{\alpha(n-1)}
 $$
 
-We want to test if a chemical product is effective in repelling household insects. The number of insects was counted before and after the application of the product.
+We want to test if a chemical product is effective in repelling household insects. The number of insects was counted **before** and **after** the application of the product.
 
 ```{r}
 before <- c(8, 6, 7, 8, 9, 6, 7)
@@ -424,7 +430,7 @@ after <- c(4, 0, 3, 5, 3, 4, 2)
 
 **a) Testing for paired data**
 
-As we can see from the other performed t-tests, here we set paired equal to `TRUE`.
+As we can see from the other performed t-tests, here we set `paired` equal to `TRUE`.
 
 ```{r}
 t.test(after, before, paired = TRUE, alternative = "less", conf.level = 0.95)
@@ -432,7 +438,8 @@ t.test(after, before, paired = TRUE, alternative = "less", conf.level = 0.95)
 
 **b) Plotting the Differences**
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-df = data.frame(name = factor(rep(c("before", "after"), c(7, 7))),
+df = data.frame(name = factor(rep(c("before", "after"),
+                                  c(7, 7))),
                 values = c(before, after))
 
 boxplot(values ~name,

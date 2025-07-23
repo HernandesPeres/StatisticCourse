@@ -3072,8 +3072,8 @@ vertical-align: -.125em;
   </div>
     <div class="quarto-title-meta-contents">
         <p class="affiliation">
-            <a href="https://idata.ufv.br/">
-            Biometrics and Quantitative genetics Lab.
+            <a href="https://biometria.ufv.br/">
+            Biometrics Lab.
             </a>
           </p>
       </div>
@@ -3143,11 +3143,12 @@ opacity: 0.95;
 <h2 class="anchored" data-anchor-id="example-1">Example 1</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">&quot;DataRBD.txt&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>trat <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(data<span class="sc">$</span>trat)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>bloco <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(data<span class="sc">$</span>bloco)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(prod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;C:/StatisticsCourse/07-DBC&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">&quot;DataRBD.txt&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>trat <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(data<span class="sc">$</span>trat)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>data<span class="sc">$</span>bloco <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(data<span class="sc">$</span>bloco)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(prod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="field-layout" class="level3">
 <h3 class="anchored" data-anchor-id="field-layout">1. Field layout</h3>

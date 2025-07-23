@@ -4,8 +4,8 @@ author:
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -104,6 +104,7 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 
 ```{r}
 rm(list = ls())
+setwd("C:/StatisticsCourse/07-DBC")
 data <- read.table("DataRBD.txt", header = TRUE)
 data$trat <- as.factor(data$trat)
 data$bloco <- as.factor(data$bloco)

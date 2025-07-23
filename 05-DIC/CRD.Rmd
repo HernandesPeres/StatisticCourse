@@ -4,8 +4,8 @@ author:
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -100,7 +100,7 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 </div>
 ---
 
-Loading data
+To compare the productivity of four corn varieties, an agronomist took twenty similar experimental units and randomly assigned each of the four varieties to five of them. Based on the experimental data provided below, is it possible to conclude that there is a significant difference between the varieties in terms of productivity, using a 5% significance level?
 
 ```{r}
 data <- data.frame(rep = rep(1:5, each=4),
@@ -358,6 +358,40 @@ By installing and loading the package `ExpDes` we can speed up the process, util
 - is used when all experiment condition are homogeneous (environment, materials and others)
 - Treatments are sample at ramdom without any restriction
 - Usually it is used at laboratory conditions
+
+$\text{Just remembering how to compute it manually:}$
+$$
+\begin{array}{|c|c|c|c|c|}
+\hline
+\text{Repetition} & \text{A} & \text{B} & \text{C} & \text{D} \\
+\hline
+1 & 25 & 31 & 22 & 33 \\
+2 & 26 & 25 & 26 & 29 \\
+3 & 20 & 28 & 28 & 31 \\
+4 & 23 & 27 & 25 & 34 \\
+5 & 21 & 24 & 29 & 28 \\
+\hline
+\text{Totais} & 115 & 135 & 130 & 155 \\
+\text{Médias} & 23 & 27 & 26 & 31 \\
+\hline
+\end{array}
+$$
+$$
+SQ_{total} = \sum_{ik}y_{ik}^2-C \quad \text{where} \quad C=\frac{(\sum_{ik}y_{ik})^2}{n} = \frac{535^2}{20}=14.311,25
+$$
+$$
+SQ_{total}=25^2+26^2+...+28^2-14.311,25\\
+=14.587,00-14.311,25=275,75
+$$
+$$
+SQ_{trat} = (\frac{115^2}{5}+\frac{135^2}{5}+\frac{130^2}{5}+\frac{155^2}{5})-14.311,25\\=14.475,00-14.311,25=163,75
+$$
+$$
+SQ_{res}=SQ_{total}-SQ_{trat}
+$$
+$$
+SQ_{res}=275,75-163,75=112,00
+$$
 
 ```{r warning=FALSE}
 # install.packages("ExpDes.pt")

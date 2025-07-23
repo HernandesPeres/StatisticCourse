@@ -4,8 +4,8 @@ author:
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -100,10 +100,28 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 </div>
 ---
 
+In a split plot we have to define the primary and second factor.
+
+- **Primary factor:** This is the factor that requires a greater number of experimental units to accommodate each of its levels. It is incorporated into the experimental design and used as a basis for structuring the layout.
+
+- **Secondary factor:** This factor is always randomized within the levels of the primary factor and is typically the one targeted for evaluation with greater precision.
+
+Each plot (parcel) will be assigned a unique level of the primary factor and will receive all levels of the secondary factor. This arrangement ensures that the secondary factor is fully randomized within the levels of the primary factor, allowing for precise estimation of its effects while controlling for the influence of the primary factor.
+
+### Statistical models
+$\text{CRD}$
+$$
+Y_{ijk}=\mu+\alpha_i+\delta_{ik}+\beta_j+(\alpha\beta)_{ij}+\varepsilon_{ijk}
+$$
+
+$\text{RBD}$
+$$
+Y_{ijk}=\mu+\alpha_i+\delta_{ik}+\beta_j+(\alpha\beta)_{ij}+\omega_k+\varepsilon_{ijk}
+$$
+
 ## Example 1: Non-significant Interaction (CRD)
 
 This analysis is based on a split-plot experiment conducted under a Completely Randomized Design (CRD). 
-
 The objective was to evaluate the *brix* (sugar content) of mangoes according to variety and the position of the fruits relative to the cardinal points (North, South, East, West).
 
 The researcher collected 4 fruits (one from each cardinal direction) from each of the 3 replicates for each of the 5 mango varieties.  

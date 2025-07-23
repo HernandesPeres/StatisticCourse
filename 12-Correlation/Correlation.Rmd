@@ -1,11 +1,11 @@
 ---
-title: "Correlation"
+title: "Pearson's Correlation"
 author: 
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
     affiliation:
-      - name: Biometrics and Quantitative genetics Lab. 
-        url: https://idata.ufv.br/
+      - name: Biometrics Lab. 
+        url: https://biometria.ufv.br/
         city: Viçosa
         region: Minas Gerais
         country: Brazil
@@ -15,7 +15,7 @@ format:
     toc-depth: 3
     toc-title: Sections
     toc-location: left
-    number-sections: true
+    number-sections: false
     number-depth: 4
     toc_float: true
     theme: [zephyr, theme.scss]
@@ -100,6 +100,17 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 </div>
 ---
 
+$$
+r_{Y_1,Y_2}=\frac{\hat{cov}(Y_1,Y_2)}{\sqrt{\hat{V}(Y_1)\hat{V}(Y_2)}}
+$$
+$$
+-1 \leq r_{Y_1,Y_2} \leq 1
+$$
+There are two linear relationships:
+
+- Positive, when: $0 \lt r_{Y_1,Y_2} \leq 1$;
+- Negative, when: $-1 \leq r_{Y_1, Y_2} \lt 0$
+
 ## Example 1:
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(dplyr)
@@ -110,7 +121,7 @@ rm(list = ls())
 data <- read.table("DataTemperatura.txt", header = TRUE)
 ```
 
-Descriptive statistics
+### 1.1 Descriptive statistics
 ```{r}
 var(data$y1)
 var(data$y2)
@@ -125,23 +136,26 @@ kable(data_clean, format = "html",
                                       "hover", "condensed", "responsive"))
 ```
 
-Pearson correlation matrix
+### 1.2 Pearson correlation matrix
 ```{r}
 knitr::kable(cor(data_clean, method = "pearson"))
 ```
 
-Hypothesis test for correlation
+### 1.3 Hypothesis test for correlation
 ```{r}
 cor.test(data$y1, data$y2, 
          method = "pearson", 
          alternative = "two.sided")
 ```
 
-**Interpretation:** 
--$H0$ (null hypothesis): ρ = 0 (no correlation) 
--$H1$ (alternative hypothesis): ρ ≠ 0 -The *p-value* indicates whether the correlation is statistically significant.
+$\text{Interpretation:}$
 
-Scatterplot
+- $H_0:\rho_{Y_1,Y_2} = 0$ (no correlation); 
+- $H_1:\rho_{Y_1,Y_2} ≠ 0$ 
+
+- The *p-value* indicates whether the correlation is statistically significant.
+
+### 1.4 Scatterplot
 ```{r}
 plot(data$y1, data$y2, pch = 19, col = "blue",
      xlab = "y1", ylab = "y2", main = "Scatterplot of y1 vs y2")
@@ -163,23 +177,25 @@ cov(data$peso, data$altura)
 data_clean <- data[, -1]
 ```
 
-Pearson correlation matrix
+### 2.2 Pearson correlation matrix
 ```{r}
 knitr::kable(cor(data_clean, method = "pearson"))
 ```
 
-Hypothesis test for Pearson correlation
+### 2.3 Hypothesis test for Pearson correlation
 ```{r}
 cor.test(data$peso, data$altura, 
          method = "pearson", alternative = "two.sided")
 ```
 
-**Hypothesis Interpretation:**
--   H₀ (null hypothesis): ρ = 0 (no linear correlation)
--   H₁ (alternative hypothesis): ρ ≠ 0 (there is linear correlation)
+$\text{Hypothesis Interpretation:}$
 
-The *p-value* will determine whether the correlation is statistically significant.
+- $H_0:\rho = 0$ (no linear correlation);
+- $H_1:\rho \neq 0$ (there is linear correlation);
 
+The **p-value** will determine whether the correlation is statistically significant.
+
+### 2.4 Scatterplot
 ```{r}
 plot(data$altura, data$peso,
      pch = 19,
@@ -195,14 +211,13 @@ remove(list = ls())
 
 require(ExpDes.pt)
 
-data <- read.table("DataFeijao.txt", header = TRUE)
+data <- read.table("DataBeans.txt", header = TRUE)
 
 data$gen <- factor(data$gen)
 data$bloco <- factor(data$bloco)
 ```
 
-ANOVA for all response Variables
-
+### 3.1 ANOVA
 ```{r}
 col_start <- 3 # Column index where response variables start
 
@@ -220,13 +235,13 @@ cor.test(data$prod, data$pcs,
          alternative = "two.sided", conf.level = 0.95)
 ```
 
-Correlation matrix for all response variables
+### 3.2 Correlation matrix
 ```{r}
 responses <- data[, -c(1, 2)] # Remove genotype and block columns
 knitr::kable(responses)
 ```
 
-
+### 3.3 Correlation matrix table
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(ggplot2)
 library(reshape2)
@@ -253,7 +268,9 @@ r %>% ggplot(aes(x = Var1, y = Var2, fill = value))+
         legend.position = "none")
 ```
 
-p-values for Pearson Correlation Tests
+### 3.4 Computing p-values 
+
+Assessing the statistical significance of the correlations.
 ```{r}
 pvalue <- matrix(0, ncol(responses), ncol(responses))
 colnames(pvalue) <- rownames(pvalue) <- colnames(responses)
@@ -268,6 +285,8 @@ knitr::kable(pvalue)
 
 pvalue <- melt(pvalue)
 ```
+
+### 3.5 P-value matrix table
 ```{r}
 pvalue %>% ggplot(aes(x = Var1, y = Var2, fill = value))+
   geom_tile()+
