@@ -1,5 +1,5 @@
 ---
-title: "Linear Regression (First and Second Order)"
+title: "Linear Regression First and Second orders"
 author: 
   - name: Undergrad Hernandes Peres
     email: Hernandes.panichi@ufv.br
@@ -99,6 +99,7 @@ div.quarto-title-block.default .quarto-title-banner h1 {
   <img src="G:/My Drive/IC/LogoLab.png" alt="Logo do laboratório fixo">
 </div>
 ---
+
 # Linear First-Order Regression 
 
 Linear regression verify the relation between a dependent variable and one or more independent variables.
@@ -120,11 +121,6 @@ To establish a simple linear regression model, the following assumptions must be
 
 - The error terms follow a normal distribution: $\varepsilon_i \sim N(0, \sigma^2)$.
 
-```{r}
-ls()  # List created objects
-rm(list = ls())  # Remove all objects
-ls()
-```
 ## Example 1: Single Value
 
 The linear model was proposed to explain the relationship between the amount of feed provided and milk production in goats. Using the data below, it is requested to verify whether feed significantly influences milk production (α = 5%).
@@ -153,21 +149,36 @@ $$
 $$
 \sum_{i=1}^nY_iX_i=\hat{\beta_0}\sum_{i=1}^nX_i+\hat{\beta_1}\sum_{i=1}^nX_i^2\\
 500\hat{\beta_0}+56.250\hat{\beta_1}=1.015\\
+$$
+
+$$
 \text{Then, we divide by 100:}\\
+$$
+
+$$
 \frac{500\hat{\beta_0}+56.250\hat{\beta_1}=1.015}{100} = 5\hat{\beta_0}+562,50\hat{\beta_1}=10,25 
 $$
 $$
 5\hat{\beta_0}+500\hat{\beta_1}=9,50\\
 5\hat{\beta_0}+562,50\hat{\beta_1}=10,25
 $$
+
 $$
 5\hat{\beta_0}+500\hat{\beta_1}=9,50\\
 \quad \quad \quad 62,5\hat{\beta_1}=0,75\\
 \hat{\beta_1}
 =\frac{0.75}{62.50}=0,0120\\
+$$
+
+$$
 5\hat{\beta_0}+500*0,0120=9,50
 \hat{\beta_0}=0.700\\
+$$
+
+$$
 Then:\\
+$$
+$$
 \hat{Y_i}=0,700+0,012X_i
 $$
 ```{r}
@@ -181,7 +192,6 @@ goat
 plot(y ~ x, pch = 19, data = goat,
      main = "Scatterplot of Milk Production vs Feed Level",
      xlab = "Feed Level (g)", ylab = "Milk Production (L/day)")
-
 cor(goat)
 ```
 
@@ -338,15 +348,14 @@ shapiro.test(res)
 bartlett.test(res, x)
 ```
 
-### 2.2 Regression model (1st-degree)
+### 2.2 Scartterplot
 ```{r}
-# Scatterplot
 plot(x, y, pch = 19, col = "red", ylim = c(0, 20), main = "Scatterplot")
 plot(tapply(y, x, mean) ~ unique(x), pch = 19, col = "red", ylim = c(0, 20),
      main = "Mean Response per Dose")
 ```
 
-### 2.3 Model fitting
+### 2.3 Fitting the model
 ```{r}
 fit2 <- lm(y ~ x)
 summary(fit2)
@@ -358,7 +367,6 @@ confint(fit2)
 
 Lack of fit and pure error
 ```{r}
-# Fit model treating x as a factor
 fit3 <- lm(y ~ factor(x))
 summary(fit3)
 R2max <- summary(fit3)$r.squared; R2max
@@ -381,27 +389,28 @@ r2real <- R2 / R2max
 r2real
 ```
 
-Using expdes.pt package
+Using `expdes.pt` package
+
+As we are working with quantitative factors, we have to set the `quali` object to `FALSE`
 ```{r}
 library(ExpDes.pt)
-
-# Quantitative data (quali = FALSE)
 dic(x, y, quali = FALSE, mcomp = "tukey", sigT = 0.05, sigF = 0.06)
 ```
 
-### Polynomial regression via reg.poly
+### 2.4 Fitting polynomial regression via `reg.poly`
+
+We first perform an ANOVA to obtain information such as degrees of freedom (DF) and sum of squares (SS) values.
 ```{r}
-# Get ANOVA info
 dic <- lm(y ~ factor(x))
 anova(dic)
+```
 
-# Apply polynomial regression
+```{r}
 reg.poly(y, x, 10, 100, 4, 132)
 ```
 
-### Regression plot with equation
+### 2.5 Regression plot and equation
 ```{r}
-# Plot data points
 plot(y ~ x, data = data, pch = 16, col = "blue",
      xlab = "Dose of sedative (mg)", ylab = "Sleep duration (hours)",
      ylim = c(0, 20), frame = FALSE)
@@ -410,24 +419,22 @@ plot(y ~ x, data = data, pch = 16, col = "blue",
 cf.m <- coef(fit2)
 curve(cf.m[1] + cf.m[2]*x, add = TRUE, col = "red", lty = 1)
 
-# Annotate with equation and R²
 co <- format(c(coef(fit2), r2real), digits = 4)
-text(3.5, 5.0,
+text(3.5, 
+     5.0,
      label = substitute(hat(y[i]) == b0 + b1*x[i] ~~~~ r^2 == r2,
                         list(b0 = co[1], b1 = co[2], r2 = co[3])))
 box()
 ```
 
-### Fitting with mean and totals
+### 2.6 Fitting with mean and totals
 ```{r}
-# Using mean values
 y1 <- c(5, 9, 10, 13, 13)
 x1 <- c(1, 2, 3, 4, 5)
 fit5 <- lm(y1 ~ x1)
 summary(fit5)
 anova(fit5)
 
-# Using total values
 y2 <- c(15, 27, 30, 39, 39)
 x2 <- c(1, 2, 3, 4, 5)
 fit6 <- lm(y2 ~ x2)
@@ -435,7 +442,7 @@ summary(fit6)
 anova(fit6)
 ```
 
-Note:
+**Note:**
 
 Both models yield the same regression equation form
 When using totals, coefficients are multiplied by the number of replicates
@@ -449,10 +456,10 @@ A degree-p polynomial function can be represented as:
 $$
 y=\beta_0+\beta_1X^1+\beta_2X^2+...+\beta_pX^p+\varepsilon
 $$
-"According to the data provided below for variable X (Zn micronutrient dose in ppm) and variable Y (dry matter in g/plant), check—using a 5% probability level and a second-degree linear model—whether the relationship between variable X (independent) and Y (dependent) is significant.
+"According to the data provided below for variable X (Zn micro-nutrient dose in ppm) and variable Y (dry matter in g/plant), check—using a 5% probability level and a second-degree linear model—whether the relationship between variable X (independent) and Y (dependent) is significant.
 
 ```{r}
-rm(list=ls())  # Remove all created objects
+rm(list=ls()) 
 
 x <- c(1.0, 2.5, 4.0, 5.5, 7.0, 8.5)
 y <- c(20.3, 31.3, 34.6, 35.1, 30.2, 19.7)
@@ -462,22 +469,21 @@ ms <- data.frame(x, y)
 plot(y ~ x, col = 4, pch = 19, data = ms,
      main = "Scatter plot: Dry matter vs Zinc dose",
      xlab = "Zinc dose (ppm)", ylab = "Dry matter (g/plant)")
-
 ```
 
-### 3.1 Model selection
+As we can see the dots do not followed a linear distribution.
 
-#### Fit first-degree model
+### 3. Model selection
 
+### 3.1 Fit first-degree model
 ```{r}
 fit1 <- lm(y ~ x)
 summary(fit1)
 anova(fit1)
 ```
+**Only the intercept was significative.** Then, the first-degree model **does not** adequately explain the variability in $Y$. 
 
-The first-degree model **does not** adequately explain the variability in y.
-
-#### Fit second-order model
+### 3.2 Fit second-order model
 
 ```{r}
 fit3 <- lm(y ~ x + I(x^2))
@@ -485,6 +491,8 @@ summary(fit3)
 anova_fit3 <- anova(fit3)
 print(anova_fit3, digits = 6)
 ```
+
+However, when we check the significance for the second order analysis we verify 
 
 ### 3.2 Checking Assumptions
 **Normality test**

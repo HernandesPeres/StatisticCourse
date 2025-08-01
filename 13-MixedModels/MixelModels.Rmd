@@ -156,7 +156,7 @@ The model adjusts the yield by considering genotypes as fixed effects, in order 
 
 - $\text{Yield~gen+rep}:$ `gen` and `rep` are treated as fixed effect, because we want to compute the effect of each genotype;
 
-- $\text{~Bloco}:$ Block is a random effect, once it allows to control the variation between blocks. Which helps to control the environmental variability and increase the precision to analyse the genotypes
+- $\text{~Block}:$ Block is a random effect, once it allows to control the variation between blocks. Which helps to control the environmental variability and increase the precision to analyse the genotypes
 
 ```{r}
 #pkgbuild::check_build_tools(debug = TRUE)
@@ -165,11 +165,9 @@ The model adjusts the yield by considering genotypes as fixed effects, in order 
 library(sommer)
 
 set.seed(7)
-model1 <- mmes(yield~gen+rep,
+model1 <- mmes(yield ~ gen + rep,
               random = ~ rep:inc.bloco,
               data = data)
-
-plot(model1)
 ```
 
 **Some important statistical components**
@@ -208,7 +206,7 @@ $\text{When use BLUP?}$
 
 ```{r}
 model2 <- mmes(yield ~ rep,
-               random = ~ gen + rep:inc.bloco,
+               random = ~ gen + gen:rep + rep:inc.bloco,
                data = data)
 ```
 
@@ -232,14 +230,19 @@ Basically represent the difference between the factor `rep`, as it treated now a
 summary(model1, ddf = "Kenward-Roger")
 ```
 
-
 ```{r}
 summary(model2, ddf = "Kenward-Roger")
 ```
+
+- *logLik*(Log-likelihood of the model): Higher values (less negative) indicate a better fit.
+
+- *AIC* (Akaike Information Criterion): Lower values indicate a better fit.
+
+- *LRT* (Likelihood Ratio Test): Likelihood ratio test used to assess the significance of the random effect
+
 [^1]Kenward-Roger: para calcular os graus de liberdade para os efeitos- Modelos Mistos e para obtenção de um teste F mais robusto.
 
 [^1]: Kenward, M.G. e Roger, J. H. (1997). Small Sample Inference for Fixed Effects from Restricted Maximum Likelihood. Biometrics, Vol 53, No. 3 pp 983-997 
-
 
 ## Fixed Effects Summary
 
@@ -248,6 +251,8 @@ mod.fg <- model1
 mod.fg$b
 ```
 
+As we can see, BLUE is an estimate with no variation and does not have bias toward any specific parameter.
+
 ## Random Effects Summary
 
 ```{r}
@@ -255,29 +260,35 @@ mod.rg <- model2
 mod.rg$u
 ```
 
-## Variance Components
+## Residual Variance Components
 
 ```{r}
 mod.fg$residuals
-mod.rg$
+mod.rg$residuals
 ```
 
-## Fitted Values and Residuals
+## Fitted Values
 
 ```{r}
-data$fitted_fg <- mod.fg$fitted
-head(data$fitted_fg)
+data$fitted <- mod.fg$fitted
+head(data)
 ```
 
-## Estimating BLUEs (Fixed genotypes)
+## Getting BLUEs
+
+$\text{Then, how do I know when to used BLUEs rather than BLUPs?}$
+
+The *BLUEs* (**Best Linear Unbiased Estimates**) are commonly used to eliminate certain effects, such as design and environmental factors.
+
+These values can then be normalized for use in models such as neural networks.
 
 ```{r}
 BLUEs <- data %>%
-  select(trat) %>%
+  select(gen) %>%
   distinct() %>%
-  mutate(BLUE = mod.fg$fitted[!duplicated(data$trat)])
+  mutate(BLUE = mod.fg$fitted[!duplicated(data$gen)])
 
-head(BLUEs)
+BLUEs <- BLUEs %>% arrange(gen)
 ```
 
 ## Estimating BLUPs (Random genotypes)
@@ -285,34 +296,69 @@ head(BLUEs)
 ```{r}
 data$fitted_rg <- mod.rg$fitted
 
-BLUPs <- data %>%
-  select(trat) %>%
-  mutate(BLUP = mod.rg$fitted)
+blups_gen <- model2$uList$`vsm( ism( gen:rep ) )`
 ```
 
 ## Heritability Calculation
 
 ```{r}
-
-vvc.g <- mod.rg$var.comp[grep("gen", rownames(mod.rg$var.comp)), "VarComp"]
-vc.e <- mod.rg$var.comp[grep("units", rownames(mod.rg$var.comp)), "VarComp"]
-
-nreps <- 3
-
-hc <- vc.g / (vc.g + vc.e / nreps)
-hc
-
+summary(mod.rg)$varcomp
 ```
+
+Before computing heritability, let's recall how it is calculated.
+
+In quantitative genetics, we know that *narrow-sense heritability (h²)* is computed using only the additive genetic effects, which represent a portion of the total genetic variance, which are typically expressed as:
+
+$$
+\sigma_g=\sigma_a+\sigma_d+\sigma_e
+$$
+Where:
+
+- $\sigma_g:$ Total genetic variance
+- $\sigma_a:$ Additive genetic variance
+- $\sigma_d:$ Dominance genetic variance
+- $\sigma_e:$ Epistatic genetic variance
+
+According to heritability theory, narrow-sense heritability estimates the proportion of phenotypic variance that can be attributed specifically to additive genetic variance, and it can be campute by:
+
+$$
+h^2=\frac{\sigma_a}{\sigma_f}
+$$
+where $\sigma_f$ is the phenotypic variance, then we can compute it in `R` by:
+
+$\text{Narrow sense heritability (h²)}$
+```{r}
+vpredict(mod.rg, h2 ~ V1/(V1+V3))
+```
+
+however, we also can compute the Broad sense heritability (H²) by:
+
+$$
+H^2=\frac{\sigma_g}{\sigma_f} = \frac{\sigma_a+\sigma_d+\sigma_e}{\sigma_f}
+$$
+
+$\text{Broad sense heritability (H²)}$
+```{r}
+vpredict(mod.rg, h2 ~ (V1+V2)/(V1+V2+V3))
+```
+
+If you're interest in learning more about what the `sommer` package can do, I highly recommend checking out the [official sommer vignette](https://cran.r-project.org/web/packages/sommer/vignettes/sommer.qg.html).
 
 ## Plotting BLUPs with Confidence Intervals
 
 ```{r}
-BLUPs <- BLUPs %>%
-  arrange(desc(BLUP)) %>%
-  mutate(gen = factor(gen, levels = gen))
+library(forcats)
+
+BLUPs <- as.data.frame(blups_gen[25:72,])
+gen <- rep(1:16, each = 3)
+rep <- rep(1:3, 16)
+
+BLUPs <- cbind(BLUPs, gen)
+BLUPs <- cbind(BLUPs, rep)
+colnames(BLUPs) <- c("BLUP", "gen", "rep")
 
 ggplot(BLUPs, aes(x = gen, y = BLUP)) +
-  geom_bar(stat = "identity", fill = "#588157", color = "black") +
+  geom_bar(stat = "identity", fill = rep, color = "black") +
   theme_minimal() +
   labs(title = "BLUPs", x = "Genotypes", y = "Predicted Value") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -321,7 +367,7 @@ ggplot(BLUPs, aes(x = gen, y = BLUP)) +
 ## Clustering BLUPs
 
 ```{r}
-dist_blups <- dist(setNames(BLUPs$BLUP, BLUPs$gen))
+dist_blups <- dist(setNames(blups_gen[1:24,], 1:24))
 hc <- hclust(dist_blups, method = "average")
 
 plot(hc, main = "Dendrogram", xlab = "Genotypes", ylab = "Distance")
@@ -330,21 +376,6 @@ abline(h = cut_height, col = "red", lty = 2)
 
 cluster_groups <- cutree(hc, h = cut_height)
 BLUPs <- BLUPs %>% mutate(cluster = factor(cluster_groups[gen]))
-head(BLUPs)
-```
-
-## Regression: BLUE vs BLUP
-
-```{r}
-joined <- left_join(BLUEs, BLUPs, by = "gen")
-
-ggplot(joined, aes(x = BLUE, y = BLUP)) +
-  geom_point(size = 3, alpha = 0.5) +
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
-  geom_abline(slope = 1, intercept = 0, linetype = 2) +
-  theme_bw() +
-  coord_fixed() +
-  labs(title = "BLUE vs BLUP", x = "BLUE", y = "BLUP")
 ```
 
 
