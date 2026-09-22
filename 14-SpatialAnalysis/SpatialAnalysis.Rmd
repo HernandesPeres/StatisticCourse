@@ -1,0 +1,391 @@
+---
+title: 
+  <br>
+  <img src="IfasLogo.jpg" style="width:30%;"/>  
+  <img src="LabLogo.png" style="width:15%;"/>  
+subtitle: "Subtitle"
+author:
+  - name: "Hernandes Peres Panichi (hp.panichi@ufl.edu)"
+    affiliation: "Ph.D, University of Florida"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "Sections"
+    toc-location: left
+    number-sections: false
+    number-depth: 4
+    toc_float: false
+    theme: flatly
+    embed-resources: true
+    self-contained: true
+    anchor-sections: true
+    smooth-scroll: true
+    link-external-newwindow: false
+    code-fold: false
+    code-overflow: wrap
+    code-copy: hover
+    code-summary: "Show/Hide Code"
+    lang: en
+    fig-format: png
+    fig-responsive: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    page-layout: article
+    title-block-banner-color: "#0021A5"
+    highlight-style: haddock
+editor_options:
+  chunk_output_type: console
+#bibliography: /StatisticCourse/library.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.height = 5, warning = F)
+```
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| paged-print: false
+remove(list = ls())
+library(tidyverse)
+library(asreml)
+library(mvngGrAd)
+library(SpATS)
+library(kableExtra)
+library(patchwork)
+
+load('mydata.Rdata')
+source('SpatialAnalysisFun.R')
+
+df = mydata %>% 
+  filter(year_trial == '2026_I4' & trait == 'TY') %>%   
+  droplevels() %>%
+  select(row, col, check, rep, clone, trait, value) %>%
+  arrange(row, col) # Water gradient
+```
+
+
+```{r}
+#| echo: false
+#| fig-height: 10
+#| fig-width: 20
+p1 = df %>%
+  ggplot(aes(x = row, y = col, fill = as.factor(clone)))+
+  geom_tile()+
+  theme_minimal()+
+  theme(legend.title = element_blank(),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 14),
+        legend.position = 'top',
+        legend.text = element_text(size = 14))
+
+p2 = df %>%
+  ggplot(aes(x = row, y = col, fill = as.factor(rep)))+
+  geom_tile()+
+  theme_minimal()+
+  theme(legend.title = element_blank(),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 14),
+        legend.position = 'top',
+        legend.text = element_text(size = 14))
+
+p3 = df %>%
+  ggplot(aes(x = row, y = col, fill = as.factor(check)))+
+  geom_tile()+
+  theme_minimal()+
+  theme(legend.title = element_blank(),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 14),
+        legend.position = 'top',
+        legend.text = element_text(size = 14))
+
+p1+p2+p3
+```
+
+
+```{r}
+# --- Store results
+
+AIC = matrix(NA, 5)
+BIC = matrix(NA, 5)
+H2 = matrix(NA, 5)
+```
+
+```{r}
+boxplot(df$value~df$row)
+boxplot(df$value~df$col)
+```
+
+#### **Model 1**
+$$
+y_{ijk} = \mu + C_k+B_j+G_i+e_{ijk}
+$$
+
+- $\mu$ Overal mean
+
+- $C_k$ Vector of fixed checks effects
+
+- $R_j$ Vector of fixed blocks effects
+
+- $G_i$ Vector of random genotypes effects, $\sim N(0, I\sigma_g^2)$
+
+- $e_{ijk}$ Vector of random residual effects, $\sim N(0, I\sigma_{e}^2)$
+
+```{r}
+M1 = asreml(value ~ 1 + check+rep, 
+            random = ~clone,
+            na.action = na.method(x = 'include'),
+            residual = ~idv(units),
+            data = df)
+M1 = update(M1)
+
+AIC[1] = as.numeric(summary(M1)$aic[1])
+BIC[1] = as.numeric(summary(M1)$bic[1])
+H2[1] = as.numeric(vpredict(M1, H2~V1/(V1+V2))[1])
+```
+
+```{r}
+M1r = asreml(value ~ 1+check+rep,
+            na.action = na.method(x = "include"),
+            residual = ~idv(units),
+            data = df)
+
+lrt(M1, M1r, boundary = T)
+```
+
+
+#### **Model 2:**(AR1 x AR1) 
+
+Modeling autoregressive correlation of residuals (AR1 x AR1)
+
+$$
+y_{ijk} = \mu+C_k+B_j+G_i+e_{ijk}
+$$
+
+- $e_{ijk}$ Vector of random residual effects, $\sim N(0, \sigma_e\Sigma_r(\rho_r)\otimes\Sigma_c(\rho_c))$
+
+```{r}
+M2 = asreml(value ~ 1+check+rep,
+            random = ~ clone,
+            na.action = na.method(x = 'include'),
+            residual = ~ar1(row):ar1(col),
+            data = df)
+M2 = update(M2)
+
+AIC[2] = as.numeric(summary(M2)$aic[1])
+BIC[2] = as.numeric(summary(M2)$bic[1])
+H2[2] = as.numeric(vpredict(M2, H2~V2/(V1+V2))[1])
+
+plot(varioGram(M2))
+```
+
+```{r}
+M2r = asreml(value ~ 1+check+rep,
+            na.action = na.method(x = 'include'),
+            residual = ~ar1(row):ar1(col),
+            data = df)
+
+lrt(M2, M2r)
+```
+
+#### **Model 3:** AR1, with fixed column
+$$
+y_{ijkl} = \mu +C_k+B_j+COL_l+G_i+e_{ijkl}
+$$
+
+- $\mu$ Overal mean
+
+- $C_k$ Vector of fixed checks effects
+
+- $B_j$ Vector of fixed blocks effects
+
+- $COL_l$ Vector of fixed collumns effects
+
+- $G_i$ Vector of random genotypes effects, $\sim N(0, I\sigma_g^2)$
+
+- $e_{ijkl}$ Vector of random residual effects, $\sim N(0, \Sigma_r(\rho_r)\otimes\Sigma_c(\rho_c))$
+
+```{r}
+df$Fcol = 1
+df$Fcol[df$col %in% seq(1,12,2)] = 2
+df$Fcol<- factor(as.numeric(trimws(df$Fcol)))
+
+df$Frow = factor(as.numeric(df$row))
+
+M3 = asreml(value ~ 1+check+rep+Fcol,
+            random = ~clone,
+            na.action = na.method(x = "include"),
+            residual = ~ar1(row):ar1(col),
+            data = df)
+M3 = update(M3)
+
+AIC[3] = as.numeric(summary(M3)$aic[1])
+BIC[3] = as.numeric(summary(M3)$bic[1])
+H2[3] = as.numeric(vpredict(M3, H2~V1/(V1+V2))[1])
+```
+
+
+```{r}
+M3r =asreml(value ~ 1+check+rep+Fcol,
+            na.action = na.method(x = "include"),
+            residual = ~ar1(row):ar1(col),
+            data = df)
+
+lrt(M3, M3r)
+```
+
+
+#### **Model 4:** Nearest neighbour adjustment - 0 additional layers
+Moving grid adjustment is most common for unreplicated trials, at early stage for mass selection in single plant evaluation.
+
+Grid is computed around each cell, and the mean of the cells included in the grid is calculated. The moving mean is computed as:
+
+$$
+x_i = \frac{\sum_j p_{j,obs} I(p_{j,obs} \in G_i)}{\sum_j I(p_{j,obs} \in G_i)}
+$$
+
+$$
+p_{i,adj} = p_{i, obs} -b(x_i -\bar{x})
+$$
+$$
+p_{i,adj} = a+bx_i
+$$
+$$
+p_{i,obs} = g_i+e_i
+$$
+
+After
+
+$$
+p_{i,obs} = g_i+e'_i
+$$
+
+where $var(e'_i)<var(e_i)$, and consequently $h_{adj}^2>h_{obs}^2$.
+
+$$
+y_{ijk} = \mu + C_k+B_j+G_i+e_{ijk}
+$$
+
+- $\mu$ Overal mean
+
+- $C_k$ Vector of fixed checks effects
+
+- $B_j$ Vector of fixed blocks effects
+
+- $G_i$ Vector of random genotypes effects, $\sim N(0, I\sigma_g^2)$
+
+- $e_{ijk}$ Vector of random residuals effects, $\sum N(0, I\sigma_e^2)$
+
+```{r}
+df$col.num <- as.numeric(trimws(df$col))
+df$row.num <- as.numeric(trimws(df$row))
+
+cross = list(down = 1:3, up = 1:3,
+             left = 1:2, right = 1:2)
+
+sketchGrid(i = 2, rowLimit = 3,
+           j = 5, colLimit = 12,
+           shapeCross = cross, excludeCenter = F, layers = NULL)
+
+adj0 = movingGrid(rows = df$row.num,
+                  columns = df$col.num,
+                  obsPhe = df$value,
+                  shapeCross = cross,
+                  layers = NULL,
+                  excludeCenter = F)
+
+df$adj.value = adj0@adjustedPhe
+
+M4 = asreml(adj.value ~ 1+check+rep,
+            random = ~clone,
+            na.action = na.method(x = 'include'),
+            residual = ~idv(row):id(col),
+            data = df)
+M4 = update(M4)
+
+AIC[4] = as.numeric(summary(M4)$aic[1])
+BIC[4] = as.numeric(summary(M4)$bic[1])
+H2[4] = as.numeric(vpredict(M4, H2~V1/(V1+V2)))
+
+plot(varioGram(M4))
+```
+
+```{r}
+M4r = asreml(adj.value~1+check+rep,
+             na.action = na.method(x="include"),
+             residual = ~idv(row):id(col),
+             data = df)
+
+lrt(M4, M4r)
+```
+
+
+#### **Model 5:** Nearest neighbour adjustment with Column as
+
+$$
+y_{ijkl} = \mu + C_k + B_j + F_l + G_i + e_{ijkl}
+$$
+
+- $\mu$ Overal mean
+
+- $C_k$ Vector of fixed checks effects
+
+- $B_j$ Vector of fixed blocks effects
+
+- $F_l$ Vector of fixed column effects
+
+- $G_i$ Vector of random genotypes effects, $\sim N(0, I\sigma_g^2)$
+
+- $e_{eijkl}$ Vector of random residuals effects, $\sim N(0, I\sigma_e^2)$
+
+```{r}
+M5 = asreml(adj.value ~ 1+check+rep+Fcol,
+            random = ~clone,
+            na.action = na.method(x = 'include'),
+            residual = ~idv(row):id(col),
+            data = df)
+M5 = update(M5)
+
+rand = summary(M5, coef = T)$coef.random
+pev = rand[,2]^2
+
+s2g = summary(M5)$varcomp["clone", "component"]
+
+r = sqrt(1-(mean(pev)/s2g))
+
+AIC[5] = as.numeric(summary(M5)$aic[1])
+BIC[5] = as.numeric(summary(M5)$bic[1])
+H2[5] = as.numeric(vpredict(M5, H2~V1/(V1+V2)))
+```
+
+
+```{r}
+M5r = asreml(adj.value ~ 1+check+rep+Fcol,
+             na.action = na.method(x = "include"),
+             residual = ~idv(row):id(col),
+             data = df)
+
+lrt(M5, M5r)
+```
+
+#### **Getting AIC, BIC, $H^2$ and $r$**
+
+$$
+H^2 = \frac{\sigma_g^2}{\sigma_g^2+\sigma_e^2}
+$$
+
+$$
+r = \sqrt{H^2}
+$$
+
+```{r}
+ans = data.frame(model = as.factor(paste0("M", 1:5)),
+                 AIC, 
+                 BIC, 
+                 H2, 
+                 r = sqrt(H2))
+kable(ans, format = 'html')
+```
+

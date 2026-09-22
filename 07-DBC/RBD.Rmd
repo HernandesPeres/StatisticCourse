@@ -104,7 +104,6 @@ div.quarto-title-block.default .quarto-title-banner h1 {
 
 ```{r}
 rm(list = ls())
-setwd("C:/StatisticsCourse/07-DBC")
 data <- read.table("DataRBD.txt", header = TRUE)
 data$trat <- as.factor(data$trat)
 data$bloco <- as.factor(data$bloco)
@@ -115,9 +114,8 @@ n <- length(prod)
 ### 1. Field layout
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-source("C:/StatisticsCourse/05-DIC/ExperimentalDesignFunction.R")
+source("../05-DIC/ExperimentalDesignFunction.R")
 
-set.seed(7)
 field_layout(data = data,
              n_row = nrow(data)/length(levels(data$bloco)),
              n_col = length(levels(data$bloco)),  
