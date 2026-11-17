@@ -1,0 +1,373 @@
+---
+title: "Individual Project Analysis"
+author: "Hernandes Peres Panichi"
+output: 
+  pdf_document:
+    toc: true          
+    toc_depth: 3
+    number_sections: true 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## **Loading data***
+```{r}
+remove(list = ls())
+library(tidyverse)
+library(asreml)
+library(mvngGrAd)
+library(SpATS)
+library(kableExtra)
+library(patchwork)
+
+load('mydata.Rdata')
+source('SpatialAnalysisFun.R')
+
+df.ty = mydata %>% 
+  filter(year_trial == '2026_I4' & trait == 'TY') %>%   
+  droplevels() %>%
+  select(row, col, check, rep, clone, trait, value) %>%
+  arrange(row, col)
+```
+
+## **Descriptive analysis**
+```{r}
+#| echo: false
+#| fig-height: 10
+#| fig-width: 20
+p1 = df.ty %>%
+  ggplot(aes(x = row, y = col, fill = as.factor(clone)))+
+  geom_tile()+
+  theme_minimal()+
+  theme(legend.title = element_blank(),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 14),
+        legend.position = 'top',
+        legend.text = element_text(size = 14))
+
+p2 = df.ty %>%
+  ggplot(aes(x = row, y = col, fill = as.factor(rep)))+
+  geom_tile()+
+  theme_minimal()+
+  theme(legend.title = element_blank(),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 14),
+        legend.position = 'top',
+        legend.text = element_text(size = 14))
+
+p3 = df.ty %>%
+  ggplot(aes(x = row, y = col, fill = as.factor(check)))+
+  geom_tile()+
+  theme_minimal()+
+  theme(legend.title = element_blank(),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 14),
+        legend.position = 'top',
+        legend.text = element_text(size = 14))
+
+p1+p2+p3
+```
+
+
+```{r}
+# --- Store results
+AIC = matrix(NA, 3)
+BIC = matrix(NA, 3)
+H2 = matrix(NA, 3)
+varG = matrix(NA, 3)
+varE = matrix(NA, 3)
+```
+
+```{r}
+#| fig-height: 7
+# --- TY
+boxplot(df.ty$value~df.ty$row)
+boxplot(df.ty$value~df.ty$col)
+```
+
+## **Model 1:** Baseline
+$$
+y_{ijk} = \mu + C_k+B_j+G_i+e_{ijk}
+$$
+
+- $\mu$ Overal mean
+
+- $C_k$ Vector of fixed checks effects
+
+- $R_j$ Vector of fixed blocks effects
+
+- $G_i$ Vector of random genotypes effects, $\sim N(0, I\sigma_g^2)$
+
+- $e_{ijk}$ Vector of random residual effects, $\sim N(0, I\sigma_{e}^2)$
+
+**Testing significance of random effect (Genotypes)**
+
+As we want to verify the difference between the genotypes. And `clone` was modeled as random effects, by simple testing:
+
+- $H_0:\sigma_g = 0$
+
+- $H_a:\sigma_g \neq 0$
+
+We can verify if there is variability between them by performing an ANOVA or Mixed Models.
+
+### ANOVA
+
+$$
+y_{ijk} = \mu +B_j+G_i+e_{ijk}
+$$
+
+$$
+y_{ijk} = \mu +C_k+B_j+G_i+e_{ijk}
+$$
+
+Where:
+
+- $C_k$ is effects of checks - if included
+
+- $B_j$ is the effects of Blocks
+
+- $G_i$ is the effects of genotypes
+
+- $e_{ijk}$ is the residual
+
+```{r}
+M1_A.ty = lm(value~rep+clone, data = df.ty)
+anova(M1_A.ty)
+
+M1_A2.ty = lm(value~check+rep+clone,data = df.ty)
+anova(M1_A2.ty)
+```
+
+When ANOVA was performed with and without including checks as a factor, the only significant differences were observed among block levels. And genotypes did not differ significantly in their means, as indicated by the F-test (P > 0.05).
+
+### Mixed Models
+```{r}
+# --- Total Yield (TY)
+M1.ty = asreml(value ~ 1+check+rep,
+               random = ~clone,
+               na.action = na.method(x = "include"),
+               data = df.ty)
+
+plot(M1.ty)
+
+vc.M1 = summary(M1.ty)$varcomp;vc.M1
+
+AIC[1] = as.numeric(summary(M1.ty)$aic[1])
+BIC[1] = as.numeric(summary(M1.ty)$bic[1])
+H2[1] = as.numeric(vpredict(M1.ty, H2~V1/(V1+V2))[1])
+varG[1] = as.numeric(vc.M1[1,1])
+varE[1] = as.numeric(vc.M1[2,1])
+
+M1r.ty = asreml(value ~ 1+check+rep,
+                na.action = na.method(x = "include"),
+                data = df.ty)
+
+lrt(M1.ty, M1r.ty, boundary = T)
+```
+
+Mixed Model 1 also showed no significant differences among clones for Total Yield, based on the likelihood ratio test (LRT) comparing the complete model with and without the random clone effect.
+
+```{r}
+df.ty %>% group_by(clone) %>%
+  dplyr::summarise(mean = mean(value)) %>%
+  arrange(desc(mean))
+```
+
+## **Model 2:** (AR1 x AR1) 
+
+Modeling autoregressive correlation of residuals (AR1 x AR1)
+
+$$
+y_{ijk} = \mu+C_k+B_j+G_i+e_{ijk}
+$$
+
+- $e_{ijk}$ Vector of random residual effects, $\sim N(0, \sigma_e\Sigma_r(\rho_r)\otimes\Sigma_c(\rho_c))$
+
+```{r}
+# --- TY
+M2.ty = asreml(value ~ 1+check+rep,
+               random = ~ clone,
+               na.action = na.method(x = 'include'),
+               residual = ~ar1(row):ar1(col),
+               data = df.ty)
+
+plot(M2.ty)
+
+vc.M2 = summary(M2.ty)$varcomp;vc.M2
+
+AIC[2] = as.numeric(summary(M2.ty)$aic[1])
+BIC[2] = as.numeric(summary(M2.ty)$bic[1])
+H2[2] = as.numeric(vpredict(M2.ty, H2~V1/(V1+V2))[1])
+varG[2] = as.numeric(vc.M2[1,1])
+varE[2] = as.numeric(vc.M2[2,1])
+
+M2r.ty = asreml(value ~ 1+check+rep,
+                na.action = na.method(x = 'include'),
+                residual = ~ar1(row):ar1(col),
+                data = df.ty)
+
+lrt(M2.ty, M2r.ty)
+
+plot(varioGram(M2.ty))
+```
+Now, the genotype random term has variability within its levels. 
+
+## **Model 3:** AR1, with fixed column
+$$
+y_{ijkl} = \mu +C_k+B_j+COL_l+G_i+e_{ijkl}
+$$
+
+- $\mu$ Overal mean
+
+- $C_k$ Vector of fixed checks effects
+
+- $B_j$ Vector of fixed blocks effects
+
+- $COL_l$ Vector of fixed collumns effects
+
+- $G_i$ Vector of random genotypes effects, $\sim N(0, I\sigma_g^2)$
+
+- $e_{ijkl}$ Vector of random residual effects, $\sim N(0, \Sigma_r(\rho_r)\otimes\Sigma_c(\rho_c))$
+
+```{r}
+df.ty$Fcol = factor(as.numeric(df.ty$col))
+
+# --- TY
+M3.ty = asreml(value ~ 1+check+rep+Fcol,
+               random = ~clone,
+               na.action = na.method(x = "include"),
+               residual = ~ar1(row):ar1(col),
+               data = df.ty)
+plot(M3.ty)
+vc.M3 = summary(M3.ty)$varcomp; vc.M3
+
+AIC[3] = as.numeric(summary(M3.ty)$aic[1])
+BIC[3] = as.numeric(summary(M3.ty)$bic[1])
+H2[3] = as.numeric(vpredict(M3.ty, H2~V1/(V1+V2))[1])
+varG[3] = as.numeric(vc.M3[1,1])
+varE[3] = as.numeric(vc.M3[2,1])
+
+M3r.ty = asreml(value ~ 1+check+rep+Fcol,
+                na.action = na.method(x = "include"),
+                residual = ~ar1(row):ar1(col),
+                data = df.ty)
+
+lrt(M3.ty, M3r.ty)
+
+plot(varioGram(M3.ty))
+```
+
+Using LRT test, the genotype random term has variability within its levels. 
+
+Note that the variogram now is considered more flat, and therefore a better fit was found. Specially in this case, a water channel ran along the head of each of three rows, creating a potential source of enviromental variation. And the original blocking arrangement was not adequate to isolate this source.
+
+```{r fig.height=6, fig.width=12}
+library(ggplot2)
+library(dplyr)
+library(forcats)
+library(patchwork)
+
+
+predM1.ty = as.data.frame(predict(M1.ty, 'clone')$pvals) %>%
+  arrange(predicted.value) %>%
+  mutate(clone = fct_inorder(clone))
+
+predM2.ty = as.data.frame(predict(M2.ty, 'clone')$pvals) %>%
+  arrange(predicted.value) %>%
+  mutate(clone = fct_inorder(clone))
+
+predM3.ty = as.data.frame(predict(M3.ty, 'clone')$pvals) %>%
+  arrange(predicted.value) %>%
+  mutate(clone = fct_inorder(clone))
+
+se_limits = range(c(predM1.ty$std.error,
+                    predM2.ty$std.error,
+                    predM3.ty$std.error), na.rm = TRUE)
+
+se_scale = scale_color_viridis_c(limits = se_limits,
+                                 name = "Standard Error")
+
+# --- Model 1
+se1 = ggplot(predM1.ty,
+             aes(y = clone, x = predicted.value, color = std.error)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(xmin = predicted.value - std.error,
+                    xmax = predicted.value + std.error),
+                orientation = "y") +
+  se_scale
+
+# --- Model 2
+se2 = ggplot(predM2.ty,
+             aes(y = clone, x = predicted.value, color = std.error)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(xmin = predicted.value - std.error,
+                    xmax = predicted.value + std.error),
+                orientation = "y") +
+  se_scale
+
+# --- Model 3
+se3 = ggplot(predM3.ty,
+             aes(y = clone, x = predicted.value, color = std.error)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(xmin = predicted.value - std.error,
+                    xmax = predicted.value + std.error),
+                orientation = "y") +
+  se_scale
+
+se1 + se2 + se3 +
+  plot_layout(guides = 'collect', axes = 'collect')
+```
+
+## **AIC, BIC, $H^2$ and ranking**
+
+$$
+H^2 = \frac{\sigma_g^2}{\sigma_g^2+\sigma_e^2}
+$$
+
+```{r}
+ans = data.frame(Trait = rep(c("TY"), each = 3),
+                 model = as.factor(paste0("M", 1:3)),
+                 AIC, 
+                 BIC,
+                 varG,
+                 varE,
+                 H2)
+
+kable(ans, 
+      format = "latex", 
+      booktabs = TRUE,          
+      longtable = TRUE,        
+      align = "c") %>%  
+  kable_styling(latex_options = c("striped"),
+                font_size = 12)
+```
+
+This shows that spatial analysis can reveal genotype differences that were masked by environmental heterogeneity in the raw data or simpler models. Because, spatial models can **(i) removel spatial heterogeneity**, **(ii) Improve separation of genetic and environmental effects** and **(iii) the model changes the covariance structure**.
+
+```{r fig.height=5}
+# --- TY
+pred = bind_rows(
+  predM1.ty %>% select(clone, predicted.value) %>% mutate(model ="M1"),
+  predM2.ty %>% select(clone, predicted.value) %>% mutate(model ="M2"),
+  predM3.ty %>% select(clone, predicted.value) %>% mutate(model = "M3"))
+
+pred = pred %>%
+  group_by(model) %>%
+  mutate(rank = rank(-predicted.value, ties.method = "average")) %>%
+  ungroup()
+
+ggplot(pred,aes(x = model,y = rank, group = clone, color = clone)) +
+  geom_line(size = 2) +
+  geom_point(size = 4) +
+  scale_y_reverse(breaks = 1:12, limits = c(12,1)) +
+  labs(x = " ", y = "Rank")+
+  theme_minimal()+
+  theme(legend.title = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 14),
+        legend.position = 'right',
+        legend.text = element_text(size = 14))
+```

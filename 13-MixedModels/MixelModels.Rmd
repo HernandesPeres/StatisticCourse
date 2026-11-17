@@ -126,3 +126,51 @@ $$
 g_i = (\mu_i-\hat{\mu_i})\lambda
 $$
 And therefore, the shrinkage of an individual becomes a functions of its $\sigma_g^2$ $\sigma_e^2$ and the number of replicates ($r$).
+
+#### Half-sib model
+
+$$
+y = X\beta + Z_1m + Z_2g+ e
+$$
+
+- $\beta$ Vector of fixed effects
+
+- $m$ Vector of random sire effects; $\sim N(0, I\sigma_m^2)$ 
+
+- $g$ Vector of random individual effects; $\sim N(0, A\sigma_g^2)$
+
+- $e$ Vector of random residual effects; $\sim N(0, A\sigma_e^2)$
+
+where $A$ is the pedigree information.
+Heritability ($h^2$) estimation can be:
+
+$$
+h^2 = \frac{\sigma_a^2}{\sigma_s^2+\sigma_g^2+\sigma_e^2}
+$$
+where
+
+$$
+\sigma_a^2 = 4\times \sigma_m^2
+$$
+#### Full-sib model
+
+$$
+y = X\beta + Z_1m + Z_2f + Z_3mf + e
+$$
+- $\beta$ Vector of fixed effects;
+
+- $m$ Vector of random mother effects, $\sim N(0, A\sigma_m^2)$
+
+- $f$ Vector of random father effects, $\sim N(0, A\sigma_f^2)$
+
+- $mf$ Vector of of random family effects, $\sim N(0, A\sigma_{mf}^2) $
+
+- $\sigma_g^2(FS) = \frac{1}{2}\sigma_a^2 + \frac{1}{4}\sigma_d^2$
+
+- $\sigma_a^2 = 2(\sigma_m^2+\sigma_f^2)$
+
+- $\sigma_d^2 = 4(\sigma_{mf}^2)$
+
+So for full-sib families, we can estimate the narrow $h^2$ and broad $H^2$ sense heritability.
+
+

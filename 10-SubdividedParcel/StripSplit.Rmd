@@ -1,0 +1,101 @@
+---
+title: 
+  <br>
+  <img src="/Users/hp.panichi/OneDrive - University of Florida/My Drive/PhD/Presentations//IfasLogo.jpg" style="width:30%;"/>  
+  <img src="/Users/hp.panichi/OneDrive - University of Florida/My Drive/PhD/Presentations/LabLogo.png" style="width:15%;"/>  
+subtitle: "Quiz 02"
+author:
+  - name: "Hernandes Peres Panichi (hp.panichi@ufl.edu)"
+    affiliation: "Ph.D Student, University of Florida"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "Sections"
+    toc-location: left
+    number-sections: false
+    number-depth: 4
+    toc_float: false
+    theme: flatly
+    embed-resources: true
+    self-contained: true
+    anchor-sections: true
+    smooth-scroll: true
+    link-external-newwindow: false
+    code-fold: false
+    code-overflow: wrap
+    code-block-border-left: "#FA4616" #BBBBBC"
+    code-copy: hover
+    code-summary: "Show/Hide Code"
+    lang: en
+    fig-format: png
+    fig-responsive: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    page-layout: article
+    title-block-banner-color: "#0021A5"
+    highlight-style: haddock
+editor_options:
+  chunk_output_type: console
+# bibliography: library.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### **Question 01**
+The experiment was conducted using a Randomized Complete Block Design (RCBD). Within each block, the genotypes (G1, G2, G3, G4, G5, and G6) were randomized according to the experimental design. Therefore, the block represents a source of variation used to account for environmental heterogeneity, while the randomization of genotypes within blocks defines the experimental allocation of the main factor.
+
+#### **Question 02**
+
+Considering the randomization structure, the experiment is not a completely randomized factorial experiment. It consists of three factors: Genotype (G), Mowing Height (M), and Fertility Level (F), resulting in a ($6 \times 2 \times 3$) factorial treatment structure, with 36 treatment combinations.
+
+The design can be described as a split-strip arrangement within a randomized complete block structure, based on how the factors were randomized. Genotypes were assigned within blocks, while mowing height was applied as a strip factor across the experimental units. Fertility levels were then randomized within the appropriate genotype × mowing-height structure.
+
+The sources of experimental are due to each randomization, creating its own error, and all are described below in question 03.
+
+#### **Question 03**
+
+$$
+y_{ijkl} =\mu+\rho_l+G_i+a_{i(l)}+F_j+(GF)_{ij}+b_{j(il)}+M_k+c_{k(l)}+(GM)_{ik}+d_{ik(l)}+(FM)_{jk}+(GFM)_{ijk}+e_{ijkl}
+$$
+
+- $\mu$ - Overal Mean
+
+- $\rho_l$ - Block effect
+
+- $G_i$ - $i$th level genotype effect
+
+- $a_{i(l)}$ - error (a), $B\times G$ - Main plot
+
+- $F_j$ - $j$th level fertility effect
+
+- $(GF)_{ij}$ - $G\times F$ interation
+
+- $b_{j(il)}$ - error (b), $B\times F:G$ - Fertility strip
+
+- $M_k$ - $k$th level mowing height effect
+
+- $c_{k(l)}$ - error(c), $B\times M$ - Mowing strip
+
+- $(GM)_{ik}$ - $G \times M$ interation
+
+- $d_{ik(l)}$ - error(d), $B\times G \times M$
+
+- $(FM)_{jk}$ - $F\times M$ interaction
+
+- $(GFM)_{ijk}$ - $G \times F \times M$ interaction
+
+- $e_{ijkl}$ - error(e) residual $G\times F\times M$
+
+```{r eval=FALSE, include=TRUE}
+mod = lm(y~block + G + block:G + 
+           F + G:F + block:G:F +
+           M + block:M +
+           G:M + block:G:M +
+           F:M + G:F:M)
+
+anova(mod)
+```
+
